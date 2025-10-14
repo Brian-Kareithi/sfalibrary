@@ -36,7 +36,10 @@ export default function LoginPage() {
     try {
       const success = await login(email, password);
       if (success) {
-        router.push('/');
+        // Add a small delay to ensure token is properly stored
+        setTimeout(() => {
+          router.push('/');
+        }, 100);
       } else {
         setError('Invalid email or password');
       }

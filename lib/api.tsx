@@ -1,6 +1,6 @@
-import {toast} from 'react-hot-toast'
-import { SetStateAction } from 'react';
+import { toast } from 'react-hot-toast';
 
+// Interfaces
 export interface User {
   id: string;
   name: string;
@@ -15,299 +15,300 @@ export interface User {
   profileCompleted: boolean;
   lastLoginAt: string;
   createdAt: string;
-
-}
-export interface Grade {
-    // Define the structure of a Grade object
-    [key: string]: any; 
-}
-export interface Course {
-  id: string;                // Unique identifier (UUID)
-  courseCode: string;        // e.g., "MATH101"
-  name: string;              // e.g., "Basic Mathematics"
-  description: string;       // Course description
-  credits: number;           // Number of credits
-  subjectId: string;         // UUID of the related subject
-  classId: string;           // UUID of the class
-  teacherId: string;         // UUID of the teacher
-  departmentId?: string;     // Optional UUID of the department
-  createdAt: string;         // Timestamp of creation
-  updatedAt: string;         // Timestamp of last update
 }
 
-export type StudentResponse = {
+export interface Book {
   id: string;
-  userId: string;
-  admissionNumber: string;
-  academicStatus: string;
+  isbn: string;
+  title: string;
+  author: string;
+  publisher: string;
+  category: string;
+  format: 'PHYSICAL' | 'DIGITAL';
+  totalCopies: number;
+  availableCopies: number;
+  borrowedCopies: number;
+  reservedCopies: number;
+  location: string;
+  publicationYear: number;
+  edition: string;
+  language: string;
+  pages: number;
+  deweyDecimal?: string;
+  maxBorrowDays: number;
+  maxRenewals: number;
+  isReservable: boolean;
+  dailyFineAmount: number;
+  maxFineAmount: number;
+  coverImageUrl: string;
+  description: string;
+  barcode?: string;
+  isActive: boolean;
   createdAt: string;
-  updatedAt: string;
-  user: {
-    id: string;
+  creator?: {
+    name: string;
+    email?: string;
+  };
+  loans?: Loan[];
+  _count?: {
+    loans: number;
+  };
+}
+
+export interface Loan {
+  id: string;
+  bookId: string;
+  borrowerId: string;
+  borrowDate: string;
+  dueDate: string;
+  returnDate: string | null;
+  status: 'ACTIVE' | 'RETURNED' | 'OVERDUE';
+  renewalCount: number;
+  fineAmount: number;
+  finePaidAmount: number;
+  fineWaivedAmount: number;
+  condition?: 'EXCELLENT' | 'GOOD' | 'FAIR' | 'POOR' | 'DAMAGED';
+  notes?: string;
+  borrower?: {
     name: string;
     email: string;
-    phone: string | null;
-    dateOfBirth: string | null;
-    gender: string | null;
-    status: string;
-    createdAt: string;
-  };
-};
-
-export interface Notification {
-    // Define the structure of a Notification object
-    [key: string]: any;
-}
-
-export interface Resource {
-    // Define the structure of a Resource object
-    [key: string]: any;
-}
-
-export interface AssignmentSubmission {
-    assignmentId: string;
-    submissionText: string;
-}
-
-export interface Dashboard {
-    // Define the structure of a Dashboard object
-    [key: string]: any;
-}
-
-export interface AuthResponse{
-    message:string;
-    success:boolean;
-    token:string;
-    user: User;
-
-}
-
-// Define a generic ApiResponse interface
-export interface ApiResponse<T> {
-    user(user: any): unknown;
-    success: boolean;
-    message: string;
-    data: T;
-}
-interface CreateAssignmentPayload {
-  subjectId: string;        // The subject for which the assignment is created
-  title?: string;           // Optional assignment title
-  description?: string;     // Optional assignment description/text
-  dueDate?: string;         // Optional due date in ISO format
-}
-export interface Subject {
-  id: string;
-  name: string;
-  code: string;
-  description: string;
-  departmentId: string;
-  department?: {
-    id: string;
-    name: string;
-    code: string;
-  };
-  updatedAt: string;
-  createdAt: string;
-  deletedAt?: string | null;
-  isCore?: boolean | null;
-  _count?: {
-    classSubjects: number;
-    assignments: number;
-    exams: number;
-    strands: number;
-  };
-}
-
-export interface StudentProgress {
-  startedAt(startedAt: any): import("react").ReactNode;
-  id: string;
-  studentId: string;
-  teacherId: string;
-  classId: string;
-  streamId?: string;
-  progressType: "RECITATION" | "MEMORIZATION" | "UNDERSTANDING" | "REVISION";
-  currentSurahId: number;
-  currentJuzId: number;
-  currentAyahNumber?: number;
-  recitationProgress?: number;
-  memorizationProgress?: number;
-  understandingProgress?: number;
-  recitationQuality?: number;
-  memorizationQuality?: number;
-  understandingQuality?: number;
-  status: "NOT_STARTED" | "IN_PROGRESS" | "COMPLETED" | "NEEDS_REVIEW" | "PAUSED";
-  lastAssessedAt?: string;
-  completedAt?: string | null;
-  createdAt: string;
-  updatedAt: string;
-
-  student?: {
-    user: {
-      name: string;
+    role: string;
+    studentProfile?: {
+      admissionNumber: string;
+      parentContacts?: Array<{
+        name: string;
+        email: string;
+        phone: string;
+      }>;
     };
   };
-
-  currentSurah?: {
-    id: number;
-    number: number;
-    name: string;
-    arabicName: string;
-    totalAyahs: number;
-    revelationType: "MECCAN" | "MEDINAN";
-    juzId: number;
+  book?: {
+    title: string;
+    author: string;
+    isbn: string;
+    format: string;
+    dailyFineAmount?: number;
+    coverImageUrl?: string;
+    fileUrl?: string;
+    accessUrl?: string;
   };
-
-  currentJuz?: {
-    id: number;
-    number: number;
+  issuedBy?: {
+    name: string;
+  };
+  returnedBy?: {
     name: string;
   };
 }
-export interface Assessment {
+
+export interface UserBorrowingStatus {
+  canBorrow: boolean;
+  currentlyBorrowed: number;
+  maxAllowed: number;
+  remainingAllowed: number;
+  hasFines: boolean;
+  fineAmount: number;
+  borrowingEnabled: boolean;
+  message: string;
+}
+
+export interface FineDetail {
   id: string;
-  studentId: string;
-  teacherId: string;
-  progressId: string;
-  surahId?: number;
-  juzId?: number;
-  fromAyah?: number;
-  toAyah?: number;
-  assessmentType:
-    | "DAILY_CHECK"
-    | "WEEKLY_REVIEW"
-    | "MONTHLY_ASSESSMENT"
-    | "TERM_EVALUATION"
-    | "PROGRESS_TEST"
-    | "REVISION_CHECK";
-  assessmentDate: string;
-  recitationScore?: number;
-  memorizationScore?: number;
-  understandingScore?: number;
-  tajweedScore?: number;
-  fluencyScore?: number;
-  completionPercentage?: number;
-  needsImprovement?: boolean;
-  readyForNext?: boolean;
-  strengths?: string;
-  weaknesses?: string;
-  recommendations?: string;
-  teacherNotes?: string;
-
-  student?: {
-    user: {
-      name: string;
-    };
-  };
-
-  surah?: {
-    name: string;
-    arabicName: string;
-  };
-}
-interface GetClassesResponse {
-  raw: SchoolClass[];
-  dropdown: ClassDropdown[];
-}
-
-// Class
-interface SchoolClass {
-  id: string;
-  name: string;
-  classCode: string;
-  displayName?: string | null;
-  level: number;
-  capacity: number;
-  academicYearId: string;
-  classTeacherId?: string | null;
-  createdByRole: string;
-  createdAt: string;
-  updatedAt: string;
-  deletedAt?: string | null;
-  streams: {
-    id: string;
-    name: string;
-    classId: string;
-    capacity: number;
-    currentEnrollment: number;
-    streamTeacherId?: string | null;
-    createdByRole: string;
-    createdAt: string;
-    updatedAt: string;
-    deletedAt?: string | null;
-    _count: {
-      currentStudents: number;
-    };
-  }[];
-  academicYear: {
-    id: string;
-    name: string;
-    startDate: string;
-    endDate: string;
-    isCurrent: boolean;
-    status: string;
-    promotionPeriodStart: string | null;
-    promotionPeriodEnd: string | null;
-    createdAt: string;
-    updatedAt: string;
-    deletedAt: string | null;
-  };
-  _count: {
-    currentStudents: number;
+  fineAmount: number;
+  finePaidAmount: number;
+  fineWaivedAmount: number;
+  returnDate: string;
+  book: {
+    title: string;
+    author: string;
   };
 }
 
-
-// Dropdown format for Class
-interface ClassDropdown {
-  label: string;
-  value: string;
-  academicYear: string;
-  level: number;
-  capacity: string;
-  streams: {
-    label: string;
-    value: string;
-    fullLabel: string;
-    capacity: string;
-    available: number;
-  }[];
+export interface UserFines {
+  totalFineAmount: number;
+  calculatedFineAmount: number;
+  fineDetails: FineDetail[];
 }
 
+export interface LibraryStats {
+  totalBooks: number;
+  totalCopies: number;
+  availableCopies: number;
+  borrowedCopies: number;
+  totalMembers?: number;
+  activeBorrows?: number;
+  overdueBooks?: number;
+  totalGenres?: number;
+}
 
-export interface PaginatedSubjectsResponse {
-  subjects: Subject[];
+export interface PaginatedResponse<T> {
+  data: T[];
   pagination: {
-    currentPage: number;
-    totalPages: number;
-    totalCount: number;
+    page: number;
     limit: number;
+    total: number;
+    totalPages: number;
+  };
+  summary?: LibraryStats;
+}
+
+export interface ApiResponse<T> {
+  success: boolean;
+  message: string;
+  data: T;
+  pagination?: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+  summary?: LibraryStats;
+}
+
+export interface AuthResponse {
+  message: string;
+  success: boolean;
+  token: string;
+  user: User;
+}
+
+export interface BulkImportResult {
+  successful: number;
+  failed: number;
+  errors: string[];
+}
+
+export interface CopyUpdateRequest {
+  totalCopies: number;
+  operation: 'add' | 'subtract' | 'set';
+}
+
+export interface BorrowRequest {
+  borrowerId: string;
+  dueDate?: string;
+  notes?: string;
+}
+
+export interface ReturnRequest {
+  condition: 'EXCELLENT' | 'GOOD' | 'FAIR' | 'POOR' | 'DAMAGED';
+  notes?: string;
+}
+
+export interface FineUpdateRequest {
+  fineAmount?: number;
+  paidAmount?: number;
+  waivedAmount?: number;
+  notes?: string;
+}
+
+// Loan-specific interfaces from the provided code
+export interface BorrowingStatus {
+  canBorrow: boolean;
+  currentlyBorrowed: number;
+  maxAllowed: number;
+  remainingAllowed: number;
+  hasFines: boolean;
+  fineAmount: number;
+  borrowingEnabled: boolean;
+  message: string;
+}
+
+export interface LoanFilters {
+  page?: number;
+  limit?: number;
+  status?: string;
+  borrowerId?: string;
+  bookId?: string;
+  overdue?: boolean;
+}
+
+export interface BorrowBookRequest {
+  borrowerId: string;
+  dueDate?: string;
+  notes?: string;
+}
+
+export interface ReturnBookRequest {
+  condition: 'EXCELLENT' | 'GOOD' | 'FAIR' | 'POOR' | 'DAMAGED';
+  notes?: string;
+}
+
+export interface RenewLoanRequest {
+  newDueDate?: string;
+}
+
+export interface LoanResponse {
+  success: boolean;
+  data: Loan[];
+  message: string;
+  pagination?: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
   };
 }
 
+export interface SingleLoanResponse {
+  success: boolean;
+  data: Loan;
+  message: string;
+}
+
+// New interfaces for students and classes
+export interface StudentResponse {
+  id: string;
+  name: string;
+  email: string;
+  registrationNumber: string;
+  classId?: string;
+  streamId?: string;
+  status: 'ACTIVE' | 'INACTIVE';
+  profileCompleted: boolean;
+  createdAt: string;
+}
+
+export interface ClassResponse {
+  id: string;
+  name: string;
+  level: string;
+  stream?: string;
+  capacity: number;
+  currentEnrollment: number;
+  isActive: boolean;
+  createdAt: string;
+}
+
+export interface GetClassesResponse {
+  classes: ClassResponse[];
+  total: number;
+}
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://steadfast-system-copy-production.up.railway.app/api';
 
-class ApiClient {
-     private token : string | null = null;
+class LibraryApiClient {
+  private token: string | null = null;
 
-     constructor(){
-        if (typeof window !== 'undefined') {
-            this.token = localStorage.getItem('token');
-        }
-     }
-     setToken(token: string) {
-        this.token = token;
-        if (typeof window !== 'undefined') {
-            localStorage.setItem('token', token);
-        }
+  constructor() {
+    // Safe localStorage access for Next.js
+    if (typeof window !== 'undefined') {
+      this.token = localStorage.getItem('token');
     }
+  }
 
-    cleartoken() {
-        this.token = null;
-        if (typeof window !== 'undefined') {
-            localStorage.removeItem('token');
-        }
+  setToken(token: string) {
+    this.token = token;
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('token', token);
     }
+  }
+
+  clearToken() {
+    this.token = null;
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('token');
+    }
+  }
+
   private async request<T>(
     endpoint: string,
     options: RequestInit = {}
@@ -320,7 +321,6 @@ class ApiClient {
     };
 
     if (this.token) {
-      // If headers is a Headers object, use set; if it's a plain object, assign property
       if (headers instanceof Headers) {
         headers.set('Authorization', `Bearer ${this.token}`);
       } else if (Array.isArray(headers)) {
@@ -336,482 +336,610 @@ class ApiClient {
         headers,
       });
 
+      // Handle HTTP errors first
+      if (!response.ok) {
+        if (response.status === 403) {
+          throw new Error('Access forbidden. Please check your permissions.');
+        }
+        if (response.status === 401) {
+          this.clearToken();
+          throw new Error('Authentication required. Please log in again.');
+        }
+        if (response.status === 404) {
+          throw new Error('Resource not found.');
+        }
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      // Check if response is JSON
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        // For successful non-JSON responses, return a generic success response
+        return {
+          success: true,
+          message: 'Request completed successfully',
+          data: {} as T
+        };
+      }
+
       const data = await response.json();
 
-      if (!response.ok) {
-        throw new Error(data.message || 'An error occurred');
+      // Check if the API response indicates an error
+      if (data.success === false) {
+        throw new Error(data.message || 'API request failed');
       }
 
       return data;
+
     } catch (error) {
       console.error('API Request Error:', error);
-      toast.error(error instanceof Error ? error.message : 'An error occurred');
+      const errorMessage = error instanceof Error ? error.message : 'An error occurred';
+      
+      // Only show toast for non-authentication errors
+      if (!errorMessage.includes('403') && !errorMessage.includes('401') && !errorMessage.includes('forbidden')) {
+        toast.error(errorMessage);
+      }
+      
       throw error;
     }
   }
 
-  // login and logout methods
+  // Authentication
   async login(credentials: { email: string; password: string }): Promise<AuthResponse> {
-  const response = await fetch(`${API_URL}/users/login`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(credentials),
-  });
+    const response = await fetch(`${API_URL}/users/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(credentials),
+    });
 
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Login failed: ${errorText}`);
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Login failed: ${errorText}`);
+    }
+
+    const result = await response.json();
+
+    if (result.success && result.token && result.user) {
+      const token = result.token.replace(/^Bearer\s+/i, '');
+      this.setToken(token);
+
+      return {
+        success: result.success,
+        token,
+        user: result.user,
+        message: result.message || '',
+      };
+    } else {
+      throw new Error(result.message || 'Login failed');
+    }
   }
-
-  const result = await response.json();
-
-  if (result.success && result.token && result.user) {
-    const token = result.token.replace(/^Bearer\s+/i, ''); // Strip "Bearer " prefix if needed
-    this.setToken(token);
-
-    return {
-      success: result.success,
-      token,
-      user: result.user,
-      message: result.message || '',
-    };
-  } else {
-    throw new Error(result.message || 'Login failed');
-  }
-}
-
 
   async logout(): Promise<void> {
-    this.cleartoken();
+    this.clearToken();
   }
 
-
-  //user functions
-    async getMe(): Promise<ApiResponse<User[]>> {
+  // User Management
+  async getMe(): Promise<ApiResponse<User>> {
     return this.request('/users/me');
   }
-  
-async updateMe(updates: Partial<User>): Promise<ApiResponse<User>> {
-  return this.request('/users/me', {
-    method: 'PUT',
-    body: JSON.stringify(updates),
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  });
-}
 
-// class management functions
+  async updateMe(updates: Partial<User>): Promise<ApiResponse<User>> {
+    return this.request('/users/me', {
+      method: 'PUT',
+      body: JSON.stringify(updates),
+    });
+  }
 
-// Class Management
-async getClasses(): Promise<ApiResponse<{
-  getClassesResponse: GetClassesResponse;
-  [x: string]: boolean | GetClassesResponse;
-}>> {
-  return this.request('/academics/classes');
-}
+  // 📚 Book Management
 
-async getClassRoster(classId: string): Promise<ApiResponse<any[]>> {
-  return this.request(`/classes/${classId}/roster`);
-}
-async getStudents(p0?: { classId: string; streamId: string | undefined; }): Promise<ApiResponse<{ students: StudentResponse[] }>> {
-  return this.request('/students');
-}
+  // Get all books with pagination and filtering
+  async getBooks(params?: {
+    page?: number;
+    limit?: number;
+    category?: string;
+    format?: string;
+    author?: string;
+    isbn?: string;
+    barcode?: string;
+    location?: string;
+    publicationYear?: number;
+    available?: boolean;
+    search?: string;
+    sortBy?: string;
+    sortOrder?: string;
+  }): Promise<ApiResponse<PaginatedResponse<Book>>> {
+    const query = new URLSearchParams();
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== '') {
+          query.append(key, value.toString());
+        }
+      });
+    }
 
-async getStudentById(studentId: string): Promise<ApiResponse<any>> {
-  return this.request(`/students/${studentId}`);
-}
+    const queryString = query.toString();
+    return this.request(`/library/books?${queryString}`);
+  }
 
-// Timetable
-async getTimetable(): Promise<ApiResponse<any>> {
-  return this.request('/timetable');
-}
+  // Get single book by ID
+  async getBookById(bookId: string): Promise<ApiResponse<Book>> {
+    return this.request(`/library/books/${bookId}`);
+  }
 
-async getTimetableConflicts(): Promise<ApiResponse<any>> {
-  return this.request('/timetable/conflicts');
-}
+  // Create a new book
+  async createBook(bookData: {
+    isbn: string;
+    title: string;
+    author: string;
+    publisher?: string;
+    category: string;
+    format: 'PHYSICAL' | 'DIGITAL';
+    totalCopies: number;
+    location?: string;
+    publicationYear?: number;
+    edition?: string;
+    language?: string;
+    pages?: number;
+    deweyDecimal?: string;
+    maxBorrowDays?: number;
+    maxRenewals?: number;
+    isReservable?: boolean;
+    dailyFineAmount?: number;
+    maxFineAmount?: number;
+    description?: string;
+    coverImageUrl?: string;
+    barcode?: string;
+  }): Promise<ApiResponse<Book>> {
+    return this.request('/library/books', {
+      method: 'POST',
+      body: JSON.stringify(bookData),
+    });
+  }
 
-// Statistics
-async getStatistics(): Promise<ApiResponse<any>> {
-  return this.request('/statistics');
-}
+  // Update book details
+  async updateBook(bookId: string, updates: Partial<Book>): Promise<ApiResponse<Book>> {
+    return this.request(`/library/books/${bookId}`, {
+      method: 'PUT',
+      body: JSON.stringify(updates),
+    });
+  }
 
-async getWorkload(): Promise<ApiResponse<any>> {
-  return this.request('/workload');
-}
+  // Delete book (soft delete)
+  async deleteBook(bookId: string): Promise<ApiResponse<{ message: string }>> {
+    return this.request(`/library/books/${bookId}`, {
+      method: 'DELETE',
+    });
+  }
 
-async getPerformance(): Promise<ApiResponse<any>> {
-  return this.request('/performance');
-}
+  // Update book copies
+  async updateBookCopies(bookId: string, request: CopyUpdateRequest): Promise<ApiResponse<Book>> {
+    return this.request(`/library/books/${bookId}/copies`, {
+      method: 'PATCH',
+      body: JSON.stringify(request),
+    });
+  }
 
-// Search
-async searchStudents(query: string): Promise<ApiResponse<any[]>> {
-  return this.request(`/search/students?query=${encodeURIComponent(query)}`);
-}
+  // Bulk import books
+  async bulkImportBooks(books: Array<{
+    isbn: string;
+    title: string;
+    author: string;
+    category: string;
+    totalCopies: number;
+    publisher?: string;
+    publicationYear?: number;
+    language?: string;
+  }>): Promise<ApiResponse<BulkImportResult>> {
+    return this.request('/library/books/bulk-import', {
+      method: 'POST',
+      body: JSON.stringify({ books }),
+    });
+  }
 
-async searchCourses(query: string): Promise<ApiResponse<any[]>> {
-  return this.request(`/search/courses?query=${encodeURIComponent(query)}`);
-}
+  // 🔄 Loan Management
 
-// Validation
-async validateClassAccess(classId: string): Promise<ApiResponse<any>> {
-  return this.request(`/validate/access/class/${classId}`);
-}
+  // Borrow a book
+  async borrowBook(bookId: string, borrowRequest: BorrowRequest): Promise<ApiResponse<Loan>> {
+    return this.request(`/library/books/${bookId}/borrow`, {
+      method: 'POST',
+      body: JSON.stringify(borrowRequest),
+    });
+  }
 
-async validateStudentAccess(studentId: string): Promise<ApiResponse<any>> {
-  return this.request(`/validate/access/student/${studentId}`);
-}
+  // Return a book
+  async returnBook(loanId: string, returnRequest: ReturnRequest): Promise<ApiResponse<Loan>> {
+    return this.request(`/library/loans/${loanId}/return`, {
+      method: 'PUT',
+      body: JSON.stringify(returnRequest),
+    });
+  }
 
-// Health
-async getHealth(): Promise<ApiResponse<any>> {
-  return this.request('/health');
-}
+  // Renew a loan
+  async renewLoan(loanId: string, newDueDate?: string): Promise<ApiResponse<Loan>> {
+    const body = newDueDate ? { newDueDate } : {};
+    return this.request(`/library/loans/${loanId}/renew`, {
+      method: 'PUT',
+      body: JSON.stringify(body),
+    });
+  }
 
-// Lesson Planning & Content
-async getLessonPlans(subjectId: string): Promise<ApiResponse<any[]>> {
-  return this.request(`/lessonPlan`);
-}
+  // Get all loans
+  async getLoans(params?: LoanFilters): Promise<ApiResponse<PaginatedResponse<Loan>>> {
+    const query = new URLSearchParams();
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== '') {
+          query.append(key, value.toString());
+        }
+      });
+    }
 
+    const queryString = query.toString();
+    return this.request(`/library/loans?${queryString}`);
+  }
 
-async createLessonPlan(subjectId: string, plan: any): Promise<ApiResponse<any>> {
-  return this.request(`/lessonPlan`, {
-    method: 'POST',
-    body: JSON.stringify(plan),
-    headers: { 'Content-Type': 'application/json' },
-  });
-}
+  // Get active loans
+  async getActiveLoans(params?: LoanFilters): Promise<ApiResponse<PaginatedResponse<Loan>>> {
+    const query = new URLSearchParams();
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== '') {
+          query.append(key, value.toString());
+        }
+      });
+    }
 
-async updateLessonPlan(planId: string, updates: any): Promise<ApiResponse<any>> {
-  return this.request(`/lessonPlans/${planId}`, {
-    method: 'PATCH',
-    body: JSON.stringify(updates),
-    headers: { 'Content-Type': 'application/json' },
-  });
-}
+    const queryString = query.toString();
+    return this.request(`/library/loans/active?${queryString}`);
+  }
 
-async getCourseContent(courseId: string): Promise<ApiResponse<any[]>> {
-  return this.request(`/teachers/courses/${courseId}/content`);
-}
+  // Get overdue loans
+  async getOverdueLoans(): Promise<ApiResponse<Loan[]>> {
+    return this.request('/library/loans/overdue');
+  }
 
-async createCourseContent(courseId: string, content: any): Promise<ApiResponse<any>> {
-  return this.request(`/teachers/courses/${courseId}/content`, {
-    method: 'POST',
-    body: JSON.stringify(content),
-    headers: { 'Content-Type': 'application/json' },
-  });
-}
+  // Update fine for a loan
+  async updateFine(loanId: string, fineUpdate: FineUpdateRequest): Promise<ApiResponse<Loan>> {
+    return this.request(`/library/loans/${loanId}/fine`, {
+      method: 'PUT',
+      body: JSON.stringify(fineUpdate),
+    });
+  }
 
-async exportLessonPlans(): Promise<ApiResponse<any>> {
-  return this.request('/export/lessonplan');
-}
+  // 👤 User Management
 
-// Assessment & Grading
-async getGradebook(gradebookId: string): Promise<ApiResponse<any>> {
-  return this.request(`/gradebooks/${gradebookId}`);
-}
+  // Get user borrowing status
+  async getUserBorrowingStatus(userId: string): Promise<ApiResponse<UserBorrowingStatus>> {
+    return this.request(`/library/users/${userId}/borrowing-status`);
+  }
 
-async postAssignmentResults(assignmentId: string, results: any): Promise<ApiResponse<any>> {
-  return this.request(`/assignments/${assignmentId}/results`, {
-    method: 'POST',
-    body: JSON.stringify(results),
-    headers: { 'Content-Type': 'application/json' },
-  });
-}
+  // Get user loans
+  async getUserLoans(userId: string, status?: string): Promise<ApiResponse<Loan[]>> {
+    const query = status ? `?status=${status}` : '';
+    return this.request(`/library/users/${userId}/loans${query}`);
+  }
 
-async postExamResults(examId: string, results: any): Promise<ApiResponse<any>> {
-  return this.request(`/exams/${examId}/results`, {
-    method: 'POST',
-    body: JSON.stringify(results),
-    headers: { 'Content-Type': 'application/json' },
-  });
-}
+  // Get user loan history
+  async getUserLoanHistory(userId: string, params?: {
+    page?: number;
+    limit?: number;
+  }): Promise<ApiResponse<PaginatedResponse<Loan>>> {
+    const query = new URLSearchParams();
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== '') {
+          query.append(key, value.toString());
+        }
+      });
+    }
 
-async updateResult(resultId: string, updates: any): Promise<ApiResponse<any>> {
-  return this.request(`/results/${resultId}`, {
-    method: 'PATCH',
-    body: JSON.stringify(updates),
-    headers: { 'Content-Type': 'application/json' },
-  });
-}
+    const queryString = query.toString();
+    return this.request(`/library/users/${userId}/history?${queryString}`);
+  }
 
-async postStrandAssessment(classId: string, assessment: any): Promise<ApiResponse<any>> {
-  return this.request(`/classes/${classId}/strand-assessments`, {
-    method: 'POST',
-    body: JSON.stringify(assessment),
-    headers: { 'Content-Type': 'application/json' },
-  });
-}
+  // Get user fines
+  async getUserFines(userId: string): Promise<ApiResponse<UserFines>> {
+    return this.request(`/library/users/${userId}/fines`);
+  }
 
-async postAttitudeAssessment(classId: string, assessment: any): Promise<ApiResponse<any>> {
-  return this.request(`/classes/${classId}/attitude-assessments`, {
-    method: 'POST',
-    body: JSON.stringify(assessment),
-    headers: { 'Content-Type': 'application/json' },
-  });
-}
+  // 🔍 Search & Discovery
 
-async postReportCardComment(reportCardId: string, subjectId: string, comment: any): Promise<ApiResponse<any>> {
-  return this.request(`/report-cards/${reportCardId}/subjects/${subjectId}/comments`, {
-    method: 'POST',
-    body: JSON.stringify(comment),
-    headers: { 'Content-Type': 'application/json' },
-  });
-}
-
-// Attendance Management
-async getClassAttendance(classId: string): Promise<ApiResponse<any>> {
-  return this.request(`/attendance/classes/${classId}`);
-}
-
-async markClassAttendance(classId: string, attendance: any): Promise<ApiResponse<any>> {
-  return this.request(`/attendance/classes/${classId}/mark`, {
-    method: 'POST',
-    body: JSON.stringify(attendance),
-    headers: { 'Content-Type': 'application/json' },
-  });
-}
-
-// Personal Administration
-async getPayrolls(): Promise<ApiResponse<any[]>> {
-  return this.request('/payrolls');
-}
-
-async getEvaluations(): Promise<ApiResponse<any[]>> {
-  return this.request('/evaluations');
-}
-
-// Export & Reports
-async exportGradebook(gradebookId: string): Promise<ApiResponse<any>> {
-  return this.request(`/export/gradebook/${gradebookId}`);
-}
-
-async exportClassRoster(classId: string): Promise<ApiResponse<any>> {
-  return this.request(`/export/class-roster/${classId}`);
-}
-
-// Activities & Scheduling
-async getRecentActivities(): Promise<ApiResponse<any[]>> {
-  return this.request('/activities/recent');
-}
-
-async getUpcomingSchedule(): Promise<ApiResponse<any[]>> {
-  return this.request('/schedule/upcoming');
-}
-
-// Student Interaction
-async postStudentComment(studentId: string, comment: any): Promise<ApiResponse<any>> {
-  return this.request(`/students/${studentId}/comments`, {
-    method: 'POST',
-    body: JSON.stringify(comment),
-    headers: { 'Content-Type': 'application/json' },
-  });
-}
-
-// student functions
-async getStudentGrades(studentId: string): Promise<ApiResponse<Grade[]>> {
-    return this.request(`/students/${studentId}/grades`);
+  // Search books
+  async searchBooks(query: string, filters?: {
+    category?: string;
+    format?: string;
+    author?: string;
+    available?: boolean;
+  }): Promise<ApiResponse<Book[]>> {
+    const searchParams = new URLSearchParams();
+    searchParams.append('query', query);
     
-}
+    if (filters) {
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== '') {
+          searchParams.append(key, value.toString());
+        }
+      });
+    }
 
+    return this.request(`/library/search?${searchParams.toString()}`);
+  }
 
-async getStudentNotifications(limit: number = 10): Promise<ApiResponse<Notification[]>> {
-    return this.request(`/students/me/notifications?limit=${limit}`);
-}
+  // Get popular books
+  async getPopularBooks(limit: number = 10): Promise<ApiResponse<Book[]>> {
+    return this.request(`/library/popular?limit=${limit}`);
+  }
 
-async getCourseResources(courseId: string): Promise<ApiResponse<Resource[]>> {
-    return this.request(`/students/courses/${courseId}/resources`);
-}
+  // Get new arrivals
+  async getNewArrivals(limit: number = 10): Promise<ApiResponse<Book[]>> {
+    return this.request(`/library/new-arrivals?limit=${limit}`);
+  }
 
-async submitAssignment(submission: AssignmentSubmission): Promise<ApiResponse<any>> {
-    return this.request('/students/assignments/submit', {
+  // Get categories
+  async getCategories(): Promise<ApiResponse<string[]>> {
+    return this.request('/library/categories');
+  }
+
+  // Get authors
+  async getAuthors(): Promise<ApiResponse<string[]>> {
+    return this.request('/library/authors');
+  }
+
+  // Get library dashboard data
+  async getDashboard(): Promise<ApiResponse<{
+    stats: LibraryStats;
+    recentActivity: any[];
+    popularBooks: Book[];
+    overdueBooks: Loan[];
+  }>> {
+    return this.request('/library/dashboard');
+  }
+
+  // Get statistics
+  async getStatistics(): Promise<ApiResponse<LibraryStats>> {
+    return this.request('/library/statistics');
+  }
+
+  // Get usage report
+  async getUsageReport(params?: {
+    startDate?: string;
+    endDate?: string;
+    reportType?: string;
+  }): Promise<ApiResponse<any>> {
+    const query = new URLSearchParams();
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== '') {
+          query.append(key, value.toString());
+        }
+      });
+    }
+
+    const queryString = query.toString();
+    return this.request(`/library/usage-report?${queryString}`);
+  }
+
+  // ⚙️ Settings
+
+  // Get library settings
+  async getSettings(): Promise<ApiResponse<any>> {
+    return this.request('/library/settings');
+  }
+
+  // Update library settings
+  async updateSettings(settings: any): Promise<ApiResponse<any>> {
+    return this.request('/library/settings', {
+      method: 'PUT',
+      body: JSON.stringify(settings),
+    });
+  }
+
+  // File Upload (for book covers)
+  async uploadBookCover(bookId: string, file: File): Promise<ApiResponse<{ imageUrl: string }>> {
+    const formData = new FormData();
+    formData.append('cover', file);
+
+    // Create headers without Content-Type for FormData
+    const headers: HeadersInit = {};
+    if (this.token) {
+      headers['Authorization'] = `Bearer ${this.token}`;
+    }
+
+    try {
+      const response = await fetch(`${API_URL}/library/books/${bookId}/cover`, {
         method: 'POST',
-        body: JSON.stringify(submission),
-        headers: {
-            'Content-Type': 'application/json',
-        },
-    });
-}
+        body: formData,
+        headers,
+      });
 
-async getDashboard(studentId: string): Promise<ApiResponse<Dashboard>> {
-    return this.request(`/teachers/dashboard`);
-}
-
- //subjects
- async getSubjects(params: { page: number; limit: number }): Promise<ApiResponse<PaginatedSubjectsResponse>> {
-  return this.request(`/subjects?page=${params.page}&limit=${params.limit}`);
-}
-
-async getCourses(params?: {
-  page?: number;
-  limit?: number;
-  search?: string;
-  subjectId?: string;
-  classId?: string;
-  teacherId?: string;
-  departmentId?: string;
-  academicYearId?: string;
-}): Promise<ApiResponse<Course[]>> {
-  const query = new URLSearchParams();
-  if (params) {
-    Object.entries(params).forEach(([key, value]) => {
-      if (value) query.append(key, value.toString());
-    });
-  }
-
-  return this.request(`/teachers/courses?${query.toString()}`);
-}
-
-//ASSIGNMENTS
-
-
-// Upload Assignment Files
-async uploadAssignmentFiles(
-  assignmentId: string,
-  files: File[]
-): Promise<ApiResponse<any>> {
-  const formData = new FormData();
-  files.forEach((file) => formData.append("files[]", file));
-
-  return this.request(`/assignments/${assignmentId}/files`, {
-    method: "POST",
-    body: formData,
-  });
-}
-//resources
-// Upload Lesson Resources
-async uploadLessonResources(
-  lessonPlanId: string,
-  files: File[]
-): Promise<ApiResponse<any>> {
-  const formData = new FormData();
-  files.forEach((file) => formData.append("files[]", file));
-
-  return this.request(`/lessonplan/${lessonPlanId}/resources`, {
-    method: "POST",
-    body: formData,
-  });
-}
-
-async createSubjectAssignment(
-  teacherId: string,
-  payload: CreateAssignmentPayload
-): Promise<ApiResponse<{ assignmentId: string }>> {
-  return this.request(`/teachers/${teacherId}/subjects`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-  });
-}
-
-//Quran 
-async getStudentProgress(
-  studentId: string,
-  params?: { progressType?: string; status?: string; includeCompleted?: boolean }
-): Promise<ApiResponse<StudentProgress[]>> {
-  const query = new URLSearchParams();
-
-  if (params) {
-    Object.entries(params).forEach(([key, value]) => {
-      if (value !== undefined && value !== null) {
-        query.append(key, String(value));
+      if (!response.ok) {
+        throw new Error(`Upload failed with status: ${response.status}`);
       }
+
+      const data = await response.json();
+      return data;
+
+    } catch (error) {
+      console.error('Upload Error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Upload failed';
+      toast.error(errorMessage);
+      throw error;
+    }
+  }
+
+  // Export books
+  async exportBooks(format: 'csv' | 'json' = 'json'): Promise<ApiResponse<{ downloadUrl: string }>> {
+    return this.request(`/library/books/export?format=${format}`);
+  }
+
+  // Additional loan methods from the provided code
+  async getBorrowingStatus(userId: string): Promise<ApiResponse<BorrowingStatus>> {
+    return this.request(`/library/users/${userId}/borrowing-status`);
+  }
+
+  // Enhanced loan methods with proper typing
+  async borrowBookWithRequest(bookId: string, borrowData: BorrowBookRequest): Promise<ApiResponse<Loan>> {
+    return this.request(`/library/books/${bookId}/borrow`, {
+      method: 'POST',
+      body: JSON.stringify(borrowData),
     });
   }
 
-
-  const qs = query.toString();
-  const url = qs
-    ? `/quraan/students/${studentId}/progress?${qs}`
-    : `/quraan/students/${studentId}/progress`;
-
-  return this.request(url);
-}
-
-async createStudentProgress(body: {
-  studentId: string;
-  classId: string;
-  streamId?: string;
-  progressType: "RECITATION" | "MEMORIZATION" | "UNDERSTANDING" | "REVISION";
-  currentSurahId: number;
-  currentJuzId?: number;
-  fromAyah: number;
-  toAyah: number;
-}): Promise<ApiResponse<StudentProgress>> {
-  return this.request(`/quraan/progress`, {
-    method: "POST",
-    body: JSON.stringify({
-      studentId: body.studentId,
-      classId: body.classId,
-      streamId: body.streamId,
-      progressType: body.progressType,
-      currentSurahId: body.currentSurahId,
-      currentJuzId: body.currentJuzId,
-      fromAyah: body.fromAyah,
-      toAyah: body.toAyah,
-    }),
-  });
-}
-
-async createAssessment(body: {
-  studentId: string;
-  classId: string;
-  streamId: string;
-  progressId: string;
-  assessmentType: "DAILY_CHECK" | "WEEKLY_REVIEW" | "MONTHLY_ASSESSMENT" | "TERM_EVALUATION" | "PROGRESS_TEST" | "REVISION_CHECK";
-  surahId?: number;
-  juzId?: number;
-  fromAyah?: number;
-  toAyah?: number;
-  recitationScore?: number;
-  memorizationScore?: number;
-  understandingScore?: number;
-  tajweedScore?: number;
-  fluencyScore?: number;
-  completionPercentage?: number;
-  needsImprovement?: boolean;
-  readyForNext?: boolean;
-  strengths?: string;
-  weaknesses?: string;
-  recommendations?: string;
-  teacherNotes?: string;
-  assessmentDate?: string;
-}): Promise<ApiResponse<Assessment>> {
-  return this.request(`/quraan/assessments`, {
-    method: "POST",
-    body: JSON.stringify(body),
-  });
-}
-async updateStudentProgress(
-  progressId: string,
-  body: {
-    currentAyahNumber?: number;
-    recitationProgress?: number;
-    memorizationProgress?: number;
-    status?: string;
-    recitationQuality?: number;
-    memorizationQuality?: number;
-  }
-): Promise<ApiResponse<StudentProgress>> {
-  return this.request(`/quraan/progress/${progressId}`, {
-    method: "PUT",
-    body: JSON.stringify(body),
-  });
-}
-  async getQuranDashboard(): Promise<ApiResponse<any>> {
-    return this.request(`/quraan/dashboard/`, {
-      method: "GET",
-      headers: { "Accept": "application/json" },
-    });
-  } 
-  async getTeacherDiaryEntries(teacherId: string): Promise<ApiResponse<any>>{
-    return this.request(`/teacher/entries/${teacherId}`, {
-      method: "GET",
-      headers: { "Accept": "application/json" },
+  async returnBookWithRequest(loanId: string, returnData: ReturnBookRequest): Promise<ApiResponse<Loan>> {
+    return this.request(`/library/loans/${loanId}/return`, {
+      method: 'PUT',
+      body: JSON.stringify(returnData),
     });
   }
 
+  async renewLoanWithRequest(loanId: string, renewData?: RenewLoanRequest): Promise<ApiResponse<Loan>> {
+    return this.request(`/library/loans/${loanId}/renew`, {
+      method: 'PUT',
+      body: JSON.stringify(renewData || {}),
+    });
+  }
 
+  // Get user fines with enhanced response
+  async getUserFinesEnhanced(userId: string): Promise<ApiResponse<{ totalFineAmount: number; calculatedFineAmount: number; fineDetails: any[] }>> {
+    return this.request(`/library/users/${userId}/fines`);
+  }
+
+  // 🎓 Academic Management - New Methods
+
+  // Get students with optional filtering
+  async getStudents(params?: { 
+    classId?: string; 
+    streamId?: string | undefined; 
+    page?: number;
+    limit?: number;
+  }): Promise<ApiResponse<{ students: StudentResponse[] }>> {
+    const query = new URLSearchParams();
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== '') {
+          query.append(key, value.toString());
+        }
+      });
+    }
+
+    const queryString = query.toString();
+    return this.request(`/students?${queryString}`);
+  }
+
+  // Get classes
+  async getClasses(): Promise<ApiResponse<GetClassesResponse>> {
+    return this.request('/academics/classes');
+  }
 }
-export const api = new ApiClient();
+
+// Create instances
+const libraryApi = new LibraryApiClient();
+const api = new LibraryApiClient();
+
+// Export the loanApi equivalent functionality
+export const loanApi = {
+  // Get all loans (for librarians/admins)
+  async getLoans(filters: LoanFilters = {}): Promise<LoanResponse> {
+    return libraryApi.getLoans(filters) as Promise<LoanResponse>;
+  },
+
+  // Get active loans
+  async getActiveLoans(filters: LoanFilters = {}): Promise<LoanResponse> {
+    return libraryApi.getActiveLoans(filters) as Promise<LoanResponse>;
+  },
+
+  // Get overdue loans
+  async getOverdueLoans(): Promise<LoanResponse> {
+    const response = await libraryApi.getOverdueLoans();
+    return {
+      success: response.success,
+      data: response.data,
+      message: response.message
+    };
+  },
+
+  // Get user's borrowing status
+  async getBorrowingStatus(userId: string): Promise<{ success: boolean; data: BorrowingStatus; message: string }> {
+    const response = await libraryApi.getUserBorrowingStatus(userId);
+    return {
+      success: response.success,
+      data: response.data,
+      message: response.message
+    };
+  },
+
+  // Get user's loans
+  async getUserLoans(userId: string, status?: string): Promise<LoanResponse> {
+    const response = await libraryApi.getUserLoans(userId, status);
+    return {
+      success: response.success,
+      data: response.data,
+      message: response.message
+    };
+  },
+
+  // Get user's loan history
+  async getUserLoanHistory(userId: string, page: number = 1, limit: number = 20): Promise<LoanResponse> {
+    const response = await libraryApi.getUserLoanHistory(userId, { page, limit });
+    return {
+      success: response.success,
+      data: response.data.data || response.data,
+      message: response.message,
+      pagination: response.data.pagination
+    };
+  },
+
+  // Borrow a book
+  async borrowBook(bookId: string, borrowData: BorrowBookRequest): Promise<SingleLoanResponse> {
+    const response = await libraryApi.borrowBookWithRequest(bookId, borrowData);
+    return {
+      success: response.success,
+      data: response.data,
+      message: response.message
+    };
+  },
+
+  // Return a book
+  async returnBook(loanId: string, returnData: ReturnBookRequest): Promise<SingleLoanResponse> {
+    const response = await libraryApi.returnBookWithRequest(loanId, returnData);
+    return {
+      success: response.success,
+      data: response.data,
+      message: response.message
+    };
+  },
+
+  // Renew a loan
+  async renewLoan(loanId: string, renewData?: RenewLoanRequest): Promise<SingleLoanResponse> {
+    const response = await libraryApi.renewLoanWithRequest(loanId, renewData);
+    return {
+      success: response.success,
+      data: response.data,
+      message: response.message
+    };
+  },
+
+  // Get user fines
+  async getUserFines(userId: string): Promise<{ success: boolean; data: { totalFineAmount: number; calculatedFineAmount: number; fineDetails: any[] }; message: string }> {
+    const response = await libraryApi.getUserFinesEnhanced(userId);
+    return {
+      success: response.success,
+      data: response.data,
+      message: response.message
+    };
+  },
+
+  // Update fine
+  async updateFine(loanId: string, fineData: { fineAmount?: number; paidAmount?: number; waivedAmount?: number; notes?: string }): Promise<SingleLoanResponse> {
+    const response = await libraryApi.updateFine(loanId, fineData);
+    return {
+      success: response.success,
+      data: response.data,
+      message: response.message
+    };
+  },
+};
+
+export { libraryApi, api };

@@ -19,12 +19,10 @@ import UserInfoandLogout from '../components/logout';
 
 const navItems = [
   { name: 'Dashboard', href: '/', icon: Home },
-  { name: 'Performance', href: '/performance', icon: ArrowUpDown },
-  { name: 'Assignments', href: '/assignments', icon: ClipboardList },
-  { name: 'Quran Diary', href: '/diary', icon: BookOpen },
-  { name: 'Student Diary', href: '/studentDiary', icon: NotebookText },
-  { name: 'Lesson Plan', href: '/lessonPlan', icon: FileText },
-];
+  { name: 'Book Management', href: '/BookManagement', icon: ArrowUpDown },
+  { name: 'Loans', href: '/Loan', icon: ClipboardList },
+  { name: 'Settings', href: '/settings', icon: NotebookText },
+  ];
 
 export default function Layout({ children }: { children: ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -92,7 +90,7 @@ export default function Layout({ children }: { children: ReactNode }) {
             <div className="w-10 h-10 bg-gradient-to-br from-cyan-400 to-teal-300 rounded-lg flex items-center justify-center shadow-lg">
               <span className="text-[#011C40] font-bold text-lg">S</span>
             </div>
-            <span className="text-lg font-light text-white hidden sm:block">Steadfast Academy</span>
+            <span className="text-lg font-light text-white hidden sm:block">Steadfast Academy Library</span>
           </div>
         </div>
       </div>
