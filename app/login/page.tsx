@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../context/authcontext';
 
@@ -25,8 +25,18 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [focusedField, setFocusedField] = useState<string | null>(null);
-  const { login } = useAuth();
+  const { login, user, isAuthenticated } = useAuth();
   const router = useRouter();
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    console.log('Login page - Auth status:', { isAuthenticated, user });
+    
+    if (isAuthenticated) {
+      console.log('User already authenticated, redirecting to dashboard');
+      router.push('/');
+    }
+  }, [isAuthenticated, user, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,33 +44,69 @@ export default function LoginPage() {
     setError(null);
 
     try {
+      console.log('Login attempt with email:', email);
+      
       const success = await login(email, password);
+      console.log('Login result:', success);
+      
       if (success) {
-        // Add a small delay to ensure token is properly stored
+        // Verify token was stored
+        const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+        console.log('Token stored after login:', token ? 'Yes' : 'No');
+        
+        if (!token) {
+          console.error('Token not found in localStorage after successful login');
+          setError('Authentication failed: Token not stored. Please try again.');
+          setLoading(false);
+          return;
+        }
+
+        console.log('Login successful, redirecting to dashboard...');
+        
+        // Add a small delay to ensure state is updated
         setTimeout(() => {
           router.push('/');
-        }, 100);
+        }, 200);
       } else {
-        setError('Invalid email or password');
+        console.log('Login failed - invalid credentials');
+        setError('Invalid email or password. Please check your credentials.');
       }
     } catch (error: any) {
       console.error('Login error details:', error);
+      
+      // Debug: Check localStorage after error
+      const debugToken = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+      console.log('Token after error:', debugToken);
+      
+      // Enhanced error handling
       if (error instanceof SyntaxError && error.message.includes('Unexpected token')) {
         setError('Server error: Expected JSON but received HTML. Please check your API endpoint.');
       } else if (error.message?.includes('fetch')) {
-        setError('Network error: Unable to connect to server. Please check your connection.');
+        setError('Network error: Unable to connect to server. Please check your connection and API URL.');
       } else if (error.message?.includes('CORS')) {
         setError('CORS error: Please check your server configuration.');
+      } else if (error.message?.includes('403')) {
+        setError('Access forbidden. Please check if your account has the required permissions.');
+      } else if (error.message?.includes('401')) {
+        setError('Authentication failed. Please check your credentials.');
       } else if (error.response?.status === 404) {
         setError('API endpoint not found. Please check your server configuration.');
       } else if (error.response?.status === 500) {
         setError('Internal server error. Please try again later.');
+      } else if (error.message?.includes('Network Error')) {
+        setError('Cannot connect to server. Please check your internet connection and ensure the API server is running.');
       } else {
         setError(error.message || 'An unexpected error occurred. Please try again.');
       }
     } finally {
       setLoading(false);
     }
+  };
+
+  // Test credentials for development
+  const handleTestCredentials = (testEmail: string, testPassword: string) => {
+    setEmail(testEmail);
+    setPassword(testPassword);
   };
 
   return (
@@ -84,8 +130,10 @@ export default function LoginPage() {
               <h1 className="text-3xl font-light text-white mb-2 tracking-tight">
                 Welcome Back
               </h1>
-              <p className="text-[#A7EBF2] text-sm">Sign in to your School Management account</p>
+              <p className="text-[#A7EBF2] text-sm">Sign in to your School Library Management account</p>
             </div>
+
+           
 
             {/* Error Display */}
             {error && (
@@ -193,10 +241,11 @@ export default function LoginPage() {
               </button>
             </form>
 
+
             {/* Footer */}
             <div className="mt-8 text-center">
               <p className="text-xs text-[#54ACBF]">
-                Secure login powered by Luna Education System
+                Secure login powered by Steadfast Academy
               </p>
             </div>
           </div>

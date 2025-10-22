@@ -16,7 +16,7 @@ interface Book {
   category: string;
 }
 
-interface BorrowBookModalProps {
+interface LoanBookModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
@@ -28,7 +28,7 @@ interface ClassOption {
   streams?: Array<{ id: string; name: string }>;
 }
 
-export default function BorrowBookModal({ isOpen, onClose, onSuccess }: BorrowBookModalProps) {
+export default function LoanBookModal({ isOpen, onClose, onSuccess }: LoanBookModalProps) {
   const [step, setStep] = useState<'search' | 'confirm'>('search');
   const [bookSearch, setBookSearch] = useState('');
   const [books, setBooks] = useState<Book[]>([]);
@@ -38,7 +38,7 @@ export default function BorrowBookModal({ isOpen, onClose, onSuccess }: BorrowBo
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [selectedClass, setSelectedClass] = useState<string>('');
   const [selectedStream, setSelectedStream] = useState<string>('');
-  const [classNameFilter, setClassNameFilter] = useState('');
+  const [studentSearch, setStudentSearch] = useState('');
   const [dueDate, setDueDate] = useState('');
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(false);
@@ -76,25 +76,40 @@ export default function BorrowBookModal({ isOpen, onClose, onSuccess }: BorrowBo
         setClassesLoading(true);
         setError("");
         const res = await libraryApi.getClasses();
-        if (res.success && Array.isArray(res.data?.dropdown)) {
-          setClasses(res.data.dropdown);
-        } else if (res.success && Array.isArray(res.data?.getClassesResponse?.classes)) {
-          // Map the class response to the expected format
-          const classOptions = res.data.getClassesResponse.classes.map((cls: any) => ({
-            value: cls.id,
-            label: cls.name,
-            streams: cls.streams || []
-          }));
-          setClasses(classOptions);
-        } else if (res.success && Array.isArray(res.data?.classes)) {
-          const classOptions = res.data.classes.map((cls: any) => ({
-            value: cls.id,
-            label: cls.name,
-            streams: cls.streams || []
-          }));
+        
+        if (res.success) {
+          let classOptions: ClassOption[] = [];
+          
+          // Handle different response formats
+          if (Array.isArray(res.data?.dropdown)) {
+            classOptions = res.data.dropdown;
+          } else if (Array.isArray(res.data?.getClassesResponse?.classes)) {
+            classOptions = res.data.getClassesResponse.classes.map((cls: any) => ({
+              value: cls.id,
+              label: cls.name,
+              streams: cls.streams || []
+            }));
+          } else if (Array.isArray(res.data?.classes)) {
+            classOptions = res.data.classes.map((cls: any) => ({
+              value: cls.id,
+              label: cls.name,
+              streams: cls.streams || []
+            }));
+          } else if (Array.isArray(res.data?.data?.classes)) {
+            classOptions = res.data.data.classes.map((cls: any) => ({
+              value: cls.id,
+              label: cls.name,
+              streams: cls.streams || []
+            }));
+          } else {
+            console.warn('Unexpected classes response format:', res.data);
+            setError("Failed to load classes - unexpected data format");
+            return;
+          }
+          
           setClasses(classOptions);
         } else {
-          setError("Failed to load classes - invalid data format");
+          setError("Failed to load classes - API returned unsuccessful");
         }
       } catch (err) {
         console.error("Error fetching classes:", err);
@@ -120,25 +135,60 @@ export default function BorrowBookModal({ isOpen, onClose, onSuccess }: BorrowBo
         streamId: streamId
       });
       
-      const studentList = Array.isArray(res.data)
-        ? res.data
-        : Array.isArray(res.data?.students)
-        ? res.data.students
-        : [];
+      let studentList: any[] = [];
+      
+      // Handle different response formats
+      if (Array.isArray(res.data)) {
+        studentList = res.data;
+      } else if (Array.isArray(res.data?.students)) {
+        studentList = res.data.students;
+      } else if (Array.isArray(res.data?.data?.students)) {
+        studentList = res.data.data.students;
+      } else {
+        console.warn('Unexpected students response format:', res.data);
+        setError("Failed to load students - unexpected data format");
+        setStudents([]);
+        return;
+      }
 
-      const filtered = studentList.filter((s: any) => s.user?.status === "ACTIVE");
-
-      const mappedStudents = filtered.map((s: any) => ({
-        ...s,
-        user: { ...s.user },
-        currentClass: s.currentClass ? { ...s.currentClass } : null,
-        currentStream: s.currentStream ? { ...s.currentStream } : null,
-        id: s.id || s.user?.id,
-        name: s.user?.name || s.name,
-        email: s.user?.email || s.email,
-        admissionNumber: s.admissionNumber || s.user?.studentProfile?.admissionNumber,
-        className: s.currentClass?.name || s.className
-      }));
+      // Filter active students and map to Student interface
+      const mappedStudents: Student[] = studentList
+        .filter((s: any) => {
+          const status = s.status || s.user?.status;
+          return status === "ACTIVE";
+        })
+        .map((s: any) => {
+          const user = s.user || s;
+          const studentProfile = s.studentProfile || user?.studentProfile;
+          const currentClass = s.currentClass || studentProfile?.class;
+          
+          return {
+            id: s.id || user?.id,
+            name: user?.name || s.name,
+            email: user?.email || s.email,
+            registrationNumber: user?.registrationNumber || s.registrationNumber,
+            classId: s.classId || currentClass?.id,
+            streamId: s.streamId,
+            status: (user?.status || s.status) as 'ACTIVE' | 'INACTIVE',
+            profileCompleted: user?.profileCompleted || s.profileCompleted || false,
+            createdAt: user?.createdAt || s.createdAt,
+            currentClassId: s.classId || currentClass?.id,
+            currentStreamId: s.streamId,
+            currentClass: currentClass ? {
+              id: currentClass.id,
+              name: currentClass.name,
+              level: currentClass.level
+            } : undefined,
+            studentProfile: studentProfile ? {
+              admissionNumber: studentProfile.admissionNumber || s.admissionNumber,
+              class: currentClass ? {
+                id: currentClass.id,
+                name: currentClass.name,
+                level: currentClass.level
+              } : undefined
+            } : undefined
+          };
+        });
 
       setStudents(mappedStudents);
     } catch (err) {
@@ -177,7 +227,7 @@ export default function BorrowBookModal({ isOpen, onClose, onSuccess }: BorrowBo
   const handleClassChange = (classValue: string) => {
     setSelectedClass(classValue);
     setSelectedStream("");
-    setClassNameFilter("");
+    setStudentSearch("");
     setSelectedStudent(null);
   };
 
@@ -189,12 +239,21 @@ export default function BorrowBookModal({ isOpen, onClose, onSuccess }: BorrowBo
         available: true,
         limit: 20
       });
+      
       if (response.success) {
-        setBooks(response.data.data || response.data);
+        const bookData = response.data?.data || response.data;
+        if (Array.isArray(bookData)) {
+          setBooks(bookData);
+        } else {
+          setBooks([]);
+        }
+      } else {
+        setBooks([]);
       }
     } catch (error) {
       console.error('Book search error:', error);
       toast.error('Failed to search books');
+      setBooks([]);
     } finally {
       setSearchingBooks(false);
     }
@@ -208,6 +267,7 @@ export default function BorrowBookModal({ isOpen, onClose, onSuccess }: BorrowBo
       }
     } catch (error) {
       console.error('Failed to check borrowing status:', error);
+      setBorrowingStatus(null);
     }
   };
 
@@ -226,13 +286,13 @@ export default function BorrowBookModal({ isOpen, onClose, onSuccess }: BorrowBo
     setSelectedBooks(prev => prev.filter(book => book.id !== bookId));
   };
 
-  const handleBorrow = async () => {
+  const handleLoan = async () => {
     if (!selectedStudent || selectedBooks.length === 0) return;
 
     try {
       setLoading(true);
       
-      // Borrow each book sequentially
+      // Loan each book sequentially
       for (const book of selectedBooks) {
         const response = await loanApi.borrowBook(book.id, {
           borrowerId: selectedStudent.id,
@@ -241,15 +301,16 @@ export default function BorrowBookModal({ isOpen, onClose, onSuccess }: BorrowBo
         });
 
         if (!response.success) {
-          throw new Error(`Failed to borrow "${book.title}": ${response.message}`);
+          throw new Error(`Failed to loan "${book.title}": ${response.message}`);
         }
       }
 
-      toast.success(`Successfully issued ${selectedBooks.length} book${selectedBooks.length > 1 ? 's' : ''} to ${selectedStudent.name}`);
+      toast.success(`Successfully loaned ${selectedBooks.length} book${selectedBooks.length > 1 ? 's' : ''} to ${selectedStudent.name}`);
       onSuccess();
       resetForm();
     } catch (error: any) {
-      toast.error(error.message || 'Failed to issue books');
+      console.error('Loan error:', error);
+      toast.error(error.message || 'Failed to loan books');
     } finally {
       setLoading(false);
     }
@@ -262,7 +323,7 @@ export default function BorrowBookModal({ isOpen, onClose, onSuccess }: BorrowBo
     setSelectedStudent(null);
     setSelectedClass('');
     setSelectedStream('');
-    setClassNameFilter('');
+    setStudentSearch('');
     setNotes('');
     setBooks([]);
     setStudents([]);
@@ -283,16 +344,18 @@ export default function BorrowBookModal({ isOpen, onClose, onSuccess }: BorrowBo
   const filteredStudents = students.filter((student) => {
     const matchesClass = !selectedClass || student.currentClassId === selectedClass;
     const matchesStream = !selectedStream || student.currentStreamId === selectedStream;
-    const matchesNameFilter =
-      !classNameFilter ||
-      student.currentClass?.name?.toLowerCase().includes(classNameFilter.toLowerCase());
+    const matchesSearch = !studentSearch || 
+      student.name.toLowerCase().includes(studentSearch.toLowerCase()) ||
+      student.studentProfile?.admissionNumber?.toLowerCase().includes(studentSearch.toLowerCase()) ||
+      student.email.toLowerCase().includes(studentSearch.toLowerCase());
 
-    return matchesClass && matchesStream && matchesNameFilter;
+    return matchesClass && matchesStream && matchesSearch;
   });
 
-  const selectedClassData = classes.find((cls) => cls.value === selectedClass);
-  const canProceedToConfirm = selectedBooks.length > 0 && selectedStudent && 
-    (!borrowingStatus || borrowingStatus.canBorrow) &&
+  // Calculate if we can proceed to confirmation
+  const canProceedToConfirm = selectedBooks.length > 0 && 
+    selectedStudent && 
+    (!borrowingStatus || borrowingStatus.canBorrow !== false) &&
     (selectedBooks.length <= (borrowingStatus?.remainingAllowed || 10));
 
   if (!isOpen) return null;
@@ -305,12 +368,12 @@ export default function BorrowBookModal({ isOpen, onClose, onSuccess }: BorrowBo
           <div className="flex justify-between items-center mb-6 pb-4 border-b border-gray-200">
             <div>
               <h2 className="text-2xl font-bold text-gray-900 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                {step === 'search' ? 'Issue Books to Student' : 'Confirm Book Issuance'}
+                {step === 'search' ? 'Loan Books to Student' : 'Confirm Book Loan'}
               </h2>
               <p className="text-gray-600 mt-1">
                 {step === 'search' 
-                  ? 'Search for books and select a student to issue multiple books'
-                  : 'Review and confirm the book issuance details'
+                  ? 'Search for books and select a student to loan multiple books'
+                  : 'Review and confirm the book loan details'
                 }
               </p>
             </div>
@@ -346,7 +409,7 @@ export default function BorrowBookModal({ isOpen, onClose, onSuccess }: BorrowBo
                     </svg>
                     Search & Select Books
                   </h3>
-                  <p className="text-blue-700 text-sm">You can select multiple books to issue at once</p>
+                  <p className="text-blue-700 text-sm">Select books to loan to the student</p>
                 </div>
 
                 <div className="mb-6">
@@ -451,9 +514,51 @@ export default function BorrowBookModal({ isOpen, onClose, onSuccess }: BorrowBo
                     <p className="text-sm mt-1">Try different search terms or check the spelling</p>
                   </div>
                 )}
+
+                {/* Selected Books Summary */}
+                {selectedBooks.length > 0 && (
+                  <div className="mt-6 bg-gradient-to-r from-orange-50 to-amber-50 border border-orange-200 rounded-xl p-4">
+                    <h4 className="font-semibold text-orange-900 mb-3 flex items-center justify-between">
+                      <span>Books to Loan ({selectedBooks.length})</span>
+                    </h4>
+                    <div className="space-y-2 max-h-48 overflow-y-auto">
+                      {selectedBooks.map((book) => (
+                        <div key={book.id} className="flex items-center justify-between bg-white rounded-lg p-3 text-sm">
+                          <div className="flex items-center space-x-3 flex-1">
+                            {book.coverImageUrl ? (
+                              <img
+                                src={book.coverImageUrl}
+                                alt={book.title}
+                                className="w-8 h-10 object-cover rounded"
+                              />
+                            ) : (
+                              <div className="w-8 h-10 bg-gray-200 rounded flex items-center justify-center">
+                                <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                                </svg>
+                              </div>
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium text-gray-900 truncate">{book.title}</p>
+                              <p className="text-gray-500 text-xs">by {book.author}</p>
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => removeSelectedBook(book.id)}
+                            className="text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-50 ml-2 transition-colors"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
 
-              {/* Student Selection & Summary Section */}
+              {/* Student Selection Section */}
               <div className="space-y-6">
                 <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-4">
                   <h3 className="font-semibold text-green-900 mb-2 flex items-center">
@@ -462,14 +567,14 @@ export default function BorrowBookModal({ isOpen, onClose, onSuccess }: BorrowBo
                     </svg>
                     Select Student
                   </h3>
-                  <p className="text-green-700 text-sm">Choose the student to issue books to</p>
+                  <p className="text-green-700 text-sm">Choose the student to loan books to</p>
                 </div>
 
                 {/* Class & Stream Selection */}
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Class
+                      Filter by Class
                     </label>
                     <select
                       value={selectedClass}
@@ -477,7 +582,7 @@ export default function BorrowBookModal({ isOpen, onClose, onSuccess }: BorrowBo
                       disabled={classesLoading}
                       className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-gray-900 bg-white shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      <option value="">Select a class</option>
+                      <option value="">All Classes</option>
                       {classes.map((classItem) => (
                         <option key={classItem.value} value={classItem.value}>
                           {classItem.label}
@@ -495,7 +600,7 @@ export default function BorrowBookModal({ isOpen, onClose, onSuccess }: BorrowBo
                   {selectedClass && getStreamsForClass(selectedClass).length > 0 && (
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Stream
+                        Filter by Stream
                       </label>
                       <select
                         value={selectedStream}
@@ -505,7 +610,7 @@ export default function BorrowBookModal({ isOpen, onClose, onSuccess }: BorrowBo
                         }}
                         className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-gray-900 bg-white shadow-sm"
                       >
-                        <option value="">All streams</option>
+                        <option value="">All Streams</option>
                         {getStreamsForClass(selectedClass).map((stream: any) => (
                           <option key={stream.id} value={stream.id}>
                             {stream.name}
@@ -515,21 +620,24 @@ export default function BorrowBookModal({ isOpen, onClose, onSuccess }: BorrowBo
                     </div>
                   )}
 
-                  {/* Class Name Filter */}
-                  {selectedClass && (
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Filter by Class Name
-                      </label>
+                  {/* Student Search */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Search Students
+                    </label>
+                    <div className="relative">
                       <input
                         type="text"
-                        value={classNameFilter}
-                        onChange={(e) => setClassNameFilter(e.target.value)}
-                        placeholder="Enter class name..."
-                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-gray-900 bg-white shadow-sm"
+                        value={studentSearch}
+                        onChange={(e) => setStudentSearch(e.target.value)}
+                        placeholder="Search by name, admission number, or email..."
+                        className="w-full px-4 py-3 pl-11 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-gray-900 bg-white shadow-sm"
                       />
+                      <svg className="w-5 h-5 text-gray-400 absolute left-3 top-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                      </svg>
                     </div>
-                  )}
+                  </div>
                 </div>
 
                 {/* Students List */}
@@ -545,17 +653,19 @@ export default function BorrowBookModal({ isOpen, onClose, onSuccess }: BorrowBo
                     {filteredStudents.map((student) => (
                       <div
                         key={student.id}
-                        className={`border-2 rounded-xl p-4 cursor-pointer transition-all duration-200 ${
+                        className={`border-2 rounded-xl p-4 cursor-pointer transition-all duration-200 min-h-[80px] flex items-center ${
                           selectedStudent?.id === student.id
                             ? 'border-green-500 bg-green-50 shadow-lg ring-2 ring-green-200'
                             : 'border-gray-200 hover:border-green-300 hover:shadow-md bg-white'
                         }`}
                         onClick={() => setSelectedStudent(student)}
                       >
-                        <div className="flex items-center justify-between">
+                        <div className="flex items-center justify-between w-full">
                           <div className="flex-1 min-w-0">
                             <h4 className="font-semibold text-gray-900 text-sm">{student.name}</h4>
-                            <p className="text-gray-600 text-xs">Admission: {student.admissionNumber}</p>
+                            <p className="text-gray-600 text-xs">
+                              Admission: {student.studentProfile?.admissionNumber || 'N/A'}
+                            </p>
                             <p className="text-gray-500 text-xs truncate">{student.email}</p>
                             {student.currentClass?.name && (
                               <p className="text-gray-500 text-xs">Class: {student.currentClass.name}</p>
@@ -574,14 +684,14 @@ export default function BorrowBookModal({ isOpen, onClose, onSuccess }: BorrowBo
                   </div>
                 )}
 
-                {selectedClass && !loadingStudents && filteredStudents.length === 0 && (
+                {!loadingStudents && filteredStudents.length === 0 && (
                   <div className="text-center py-8 text-gray-500 bg-gray-50 rounded-xl border-2 border-dashed border-gray-200">
                     <svg className="w-12 h-12 mx-auto text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
                     </svg>
                     <p className="text-gray-600">No students found</p>
                     <p className="text-sm text-gray-500 mt-1">
-                      {classNameFilter ? 'Try adjusting your filters' : 'No active students in this class'}
+                      {studentSearch ? 'Try adjusting your search' : 'Select a class to view students'}
                     </p>
                   </div>
                 )}
@@ -603,11 +713,15 @@ export default function BorrowBookModal({ isOpen, onClose, onSuccess }: BorrowBo
                         </div>
                         <div className="flex justify-between">
                           <span className="text-gray-600">Admission:</span>
-                          <span className="font-semibold text-gray-900">{selectedStudent.admissionNumber}</span>
+                          <span className="font-semibold text-gray-900">
+                            {selectedStudent.studentProfile?.admissionNumber || 'N/A'}
+                          </span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-gray-600">Class:</span>
-                          <span className="font-semibold text-gray-900">{selectedStudent.currentClass?.name || 'N/A'}</span>
+                          <span className="font-semibold text-gray-900">
+                            {selectedStudent.currentClass?.name || 'N/A'}
+                          </span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-gray-600">Email:</span>
@@ -622,17 +736,17 @@ export default function BorrowBookModal({ isOpen, onClose, onSuccess }: BorrowBo
                           <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                           </svg>
-                          Borrowing Status
+                          Loan Status
                         </h4>
                         <div className="grid grid-cols-2 gap-3 text-sm">
                           <div>
-                            <span className="text-gray-600">Currently Borrowed:</span>
+                            <span className="text-gray-600">Currently Loaned:</span>
                             <div className="font-semibold text-gray-900">
                               {borrowingStatus.currentlyBorrowed} / {borrowingStatus.maxAllowed}
                             </div>
                           </div>
                           <div>
-                            <span className="text-gray-600">Can Borrow:</span>
+                            <span className="text-gray-600">Can Loan:</span>
                             <div className={`font-semibold ${
                               borrowingStatus.canBorrow ? 'text-green-600' : 'text-red-600'
                             }`}>
@@ -649,7 +763,7 @@ export default function BorrowBookModal({ isOpen, onClose, onSuccess }: BorrowBo
                             <div className="col-span-2">
                               <span className="text-gray-600">Outstanding Fines:</span>
                               <div className="font-semibold text-red-600">
-                                ${borrowingStatus.fineAmount.toFixed(2)}
+                                ${borrowingStatus.fineAmount?.toFixed(2) || '0.00'}
                               </div>
                             </div>
                           )}
@@ -661,54 +775,13 @@ export default function BorrowBookModal({ isOpen, onClose, onSuccess }: BorrowBo
                     )}
                   </div>
                 )}
-
-                {/* Selected Books Summary */}
-                {selectedBooks.length > 0 && (
-                  <div className="bg-gradient-to-r from-orange-50 to-amber-50 border border-orange-200 rounded-xl p-4">
-                    <h4 className="font-semibold text-orange-900 mb-3 flex items-center justify-between">
-                      <span>Selected Books</span>
-                      <span className="bg-orange-500 text-white text-xs px-2 py-1 rounded-full">
-                        {selectedBooks.length}
-                      </span>
-                    </h4>
-                    <div className="space-y-2 max-h-48 overflow-y-auto">
-                      {selectedBooks.map((book) => (
-                        <div key={book.id} className="flex items-center justify-between bg-white rounded-lg p-2 text-sm">
-                          <div className="flex-1 min-w-0">
-                            <p className="font-medium text-gray-900 truncate">{book.title}</p>
-                            <p className="text-gray-500 text-xs">by {book.author}</p>
-                          </div>
-                          <button
-                            onClick={() => removeSelectedBook(book.id)}
-                            className="text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-50 ml-2 transition-colors"
-                          >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                    {selectedStudent && borrowingStatus && (
-                      <div className="mt-3 pt-3 border-t border-orange-200">
-                        <div className={`text-sm font-medium ${
-                          selectedBooks.length <= borrowingStatus.remainingAllowed 
-                            ? 'text-green-600' 
-                            : 'text-red-600'
-                        }`}>
-                          {selectedBooks.length} of {borrowingStatus.remainingAllowed} books allowed
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
               </div>
             </div>
           ) : (
             <div className="space-y-6">
               {/* Confirmation Details */}
               <div className="bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-xl p-6">
-                <h3 className="font-semibold text-purple-900 mb-4 text-lg">Issuance Summary</h3>
+                <h3 className="font-semibold text-purple-900 mb-4 text-lg">Loan Summary</h3>
                 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   {/* Student Details */}
@@ -721,7 +794,9 @@ export default function BorrowBookModal({ isOpen, onClose, onSuccess }: BorrowBo
                     </h4>
                     <div>
                       <p className="font-bold text-gray-900 text-lg">{selectedStudent?.name}</p>
-                      <p className="text-gray-600 text-sm">Admission: {selectedStudent?.admissionNumber}</p>
+                      <p className="text-gray-600 text-sm">
+                        Admission: {selectedStudent?.studentProfile?.admissionNumber || 'N/A'}
+                      </p>
                       <p className="text-gray-500 text-xs">Email: {selectedStudent?.email}</p>
                       {selectedStudent?.currentClass?.name && (
                         <p className="text-gray-500 text-xs">Class: {selectedStudent.currentClass.name}</p>
@@ -736,7 +811,7 @@ export default function BorrowBookModal({ isOpen, onClose, onSuccess }: BorrowBo
                         <svg className="w-4 h-4 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                         </svg>
-                        Books to Issue
+                        Books to Loan
                       </span>
                       <span className="bg-purple-500 text-white text-xs px-2 py-1 rounded-full">
                         {selectedBooks.length} book{selectedBooks.length > 1 ? 's' : ''}
@@ -796,7 +871,7 @@ export default function BorrowBookModal({ isOpen, onClose, onSuccess }: BorrowBo
                   onChange={(e) => setNotes(e.target.value)}
                   rows={3}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white resize-vertical shadow-sm"
-                  placeholder="Any special instructions or notes about this book issuance..."
+                  placeholder="Any special instructions or notes about this book loan..."
                 />
               </div>
             </div>
@@ -842,21 +917,21 @@ export default function BorrowBookModal({ isOpen, onClose, onSuccess }: BorrowBo
                     Cancel
                   </button>
                   <button
-                    onClick={handleBorrow}
+                    onClick={handleLoan}
                     disabled={loading}
                     className="px-8 py-3 bg-gradient-to-r from-green-600 to-green-700 text-white font-medium rounded-xl hover:from-green-700 hover:to-green-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm hover:shadow-md flex items-center space-x-2"
                   >
                     {loading ? (
                       <>
                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                        <span>Issuing {selectedBooks.length} Book{selectedBooks.length > 1 ? 's' : ''}...</span>
+                        <span>Loaning {selectedBooks.length} Book{selectedBooks.length > 1 ? 's' : ''}...</span>
                       </>
                     ) : (
                       <>
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                         </svg>
-                        <span>Issue {selectedBooks.length} Book{selectedBooks.length > 1 ? 's' : ''}</span>
+                        <span>Loan {selectedBooks.length} Book{selectedBooks.length > 1 ? 's' : ''}</span>
                       </>
                     )}
                   </button>

@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { ReactNode, useState, useEffect } from 'react';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import {
   Home,
@@ -16,25 +16,66 @@ import {
   NotebookText,
 } from 'lucide-react';
 import UserInfoandLogout from '../components/logout';
+import { useAuth } from '@/context/authcontext';
 
 const navItems = [
   { name: 'Dashboard', href: '/', icon: Home },
   { name: 'Book Management', href: '/BookManagement', icon: ArrowUpDown },
   { name: 'Loans', href: '/Loan', icon: ClipboardList },
   { name: 'Settings', href: '/settings', icon: NotebookText },
-  ];
+];
 
 export default function Layout({ children }: { children: ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const pathname = usePathname();
+  const router = useRouter();
+  const { user } = useAuth();
 
   const isLoginPage = pathname === '/login';
 
+  // Check authentication status on component mount and route changes
+  useEffect(() => {
+    const checkAuth = () => {
+      setIsLoading(true);
+      
+      // Check if token exists in localStorage
+      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+      console.log('Auth check - Token exists:', !!token);
+      console.log('Auth check - Current path:', pathname);
+      
+      if (token) {
+        setIsAuthenticated(true);
+        
+        // If on login page but authenticated, redirect to dashboard
+        if (isLoginPage) {
+          console.log('Redirecting to dashboard from login page');
+          router.push('/');
+        }
+      } else {
+        setIsAuthenticated(false);
+        
+        // If not on login page and not authenticated, redirect to login
+        if (!isLoginPage) {
+          console.log('Redirecting to login - no token found');
+          router.push('/login');
+        }
+      }
+      
+      setIsLoading(false);
+    };
+
+    checkAuth();
+  }, [pathname, isLoginPage, router]);
+
+  // Close sidebar on route change
   useEffect(() => {
     setSidebarOpen(false);
   }, [pathname]);
 
+  // Handle window resize
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth >= 1024) {
@@ -54,7 +95,36 @@ export default function Layout({ children }: { children: ReactNode }) {
     }
   };
 
+  // Show loading state while checking authentication
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-[#011C40] via-[#023859] to-[#26658C] text-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 mx-auto bg-gradient-to-br from-cyan-400 to-teal-300 rounded-full flex items-center justify-center mb-4">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+          </div>
+          <p className="text-[#A7EBF2]">Checking authentication...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // For login page, don't show the layout
   if (isLoginPage) return <>{children}</>;
+
+  // If not authenticated and not on login page, don't render (will redirect)
+  if (!isAuthenticated && !isLoginPage) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-[#011C40] via-[#023859] to-[#26658C] text-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 mx-auto bg-gradient-to-br from-cyan-400 to-teal-300 rounded-full flex items-center justify-center mb-4">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+          </div>
+          <p className="text-[#A7EBF2]">Redirecting to login...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#011C40] via-[#023859] to-[#26658C] text-white font-sans relative overflow-hidden">
@@ -186,6 +256,21 @@ export default function Layout({ children }: { children: ReactNode }) {
 
         {/* Main Content */}
         <div className="flex-1 flex flex-col overflow-hidden transition-all duration-500">
+          {/* Authentication Status Indicator */}
+          <div className="px-6 py-2 bg-green-500/20 border-b border-green-500/30">
+            <div className="flex items-center justify-between text-sm">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                <span className="text-green-200">
+                  Authenticated as: {user?.name || 'User'}
+                </span>
+              </div>
+              <span className="text-green-300 text-xs">
+                Role: {user?.role || 'Loading...'}
+              </span>
+            </div>
+          </div>
+
           {/* Children */}
           <main className="flex-1 p-4 md:p-6 overflow-y-auto bg-white/5 backdrop-blur-lg border-l border-white/10 shadow-inner">
             {children}

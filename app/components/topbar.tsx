@@ -2,53 +2,88 @@
 
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
+import { useState, useEffect } from 'react';
 import logo from '@/public/logo.png';
 
 interface NavbarProps {
-  activeTab?: 'view' | 'update' | 'allocate';
-  onTabChange?: (tab: 'view' | 'update' | 'allocate') => void;
+  activeTab?: string;
+  onTabChange?: (tab: string) => void;
+  tabs?: { key: string; label: string }[];
 }
 
-const Navbar = ({ activeTab, onTabChange }: NavbarProps) => {
+const Navbar = ({ activeTab, onTabChange, tabs = [] }: NavbarProps) => {
   const pathname = usePathname();
-  
-  // Only show tabs on the main uniform page
-  const showTabs = pathname === '/' || pathname === '/uniforms';
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  // Handle scroll effect for navbar
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 10);
+    };
+    
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const showTabs = tabs.length > 0 && onTabChange;
 
   return (
-    <div className="fixed top-0 left-0 right-0 z-50 w-full bg-[#011C40]/90 backdrop-blur-xl border-b border-[#26658C]/30 flex items-center justify-between px-8 py-4">
-      {/* Left: Logo */}
-      <div className="flex items-center space-x-3">
-        <Image src={logo} alt="Logo" width={32} height={32} className="rounded-lg" />
-        <span className="text-xl font-light text-white tracking-wide">Steadfast Portal</span>
+    <nav className={`fixed top-0 left-0 right-0 z-50 w-full transition-all duration-300 ${
+      isScrolled 
+        ? 'bg-[#011C40]/95 backdrop-blur-xl shadow-2xl shadow-blue-900/20 border-b border-[#26658C]/40' 
+        : 'bg-[#011C40]/90 backdrop-blur-lg border-b border-[#26658C]/30'
+    }`}>
+      <div className="max-w-7xl mx-auto px-6 py-4">
+        <div className="flex items-center justify-between">
+          
+          {/* Logo Section */}
+          <div className="flex items-center space-x-4 group cursor-pointer">
+            <div className="relative">
+              <Image 
+                src={logo} 
+                alt="Steadfast Portal" 
+                width={40} 
+                height={40} 
+                className="rounded-xl transition-all duration-300 group-hover:scale-110 group-hover:rotate-3" 
+              />
+              <div className="absolute inset-0 bg-gradient-to-r from-[#54ACBF] to-[#26658C] rounded-xl opacity-0 group-hover:opacity-20 transition-opacity duration-300" />
+            </div>
+            <span className="text-2xl font-semibold bg-gradient-to-r from-white to-[#A7EBF2] bg-clip-text text-transparent tracking-tight">
+              Steadfast Portal
+            </span>
+          </div>
+
+          {/* Navigation Tabs */}
+          {showTabs && (
+            <div className="flex space-x-2 bg-[#023859]/40 rounded-2xl p-2 backdrop-blur-sm border border-[#26658C]/30 shadow-inner">
+              {tabs.map((tab) => (
+                <button
+                  key={tab.key}
+                  onClick={() => onTabChange(tab.key)}
+                  className={`px-8 py-3 rounded-xl transition-all duration-300 font-medium text-sm min-w-[120px] ${
+                    activeTab === tab.key
+                      ? 'bg-gradient-to-r from-[#54ACBF] to-[#26658C] text-white shadow-lg shadow-blue-500/25 transform scale-105'
+                      : 'text-[#A7EBF2] hover:text-white hover:bg-[#26658C]/40 hover:transform hover:scale-105'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* User Menu Placeholder */}
+          <div className="flex items-center space-x-4">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-r from-[#54ACBF] to-[#26658C] flex items-center justify-center text-white font-semibold text-sm shadow-lg">
+              U
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* Center: Tabs (only on uniform pages) */}
-      {showTabs && onTabChange && (
-        <div className="flex space-x-1 bg-[#023859]/50 rounded-xl p-1 backdrop-blur-sm border border-[#26658C]/20">
-          {[
-            { key: 'view', label: 'View Items' },
-            { key: 'update', label: 'Update Items' },
-            { key: 'allocate', label: 'Allocate Uniforms' },
-          ].map((tab) => (
-            <button
-              key={tab.key}
-              onClick={() => onTabChange(tab.key as 'view' | 'update' | 'allocate')}
-              className={`px-6 py-2 rounded-lg transition-all duration-200 font-medium text-sm ${
-                activeTab === tab.key
-                  ? 'bg-gradient-to-r from-[#54ACBF] to-[#26658C] text-white shadow-lg'
-                  : 'text-[#A7EBF2] hover:text-white hover:bg-[#26658C]/30'
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
-      )}
-
-      {/* Right: Empty space for balance */}
-      <div className="w-20"></div>
-    </div>
+      {/* Subtle bottom glow */}
+      <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#54ACBF] to-transparent opacity-50" />
+    </nav>
   );
 };
 

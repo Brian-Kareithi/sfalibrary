@@ -7,6 +7,7 @@ import { toast } from 'react-hot-toast';
 interface AuthContextType {
   user: User | null;
   loading: boolean;
+  isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
   hasRole: (roles: string[]) => boolean;
@@ -20,6 +21,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
     // Check for existing token on mount
@@ -30,11 +32,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         const parsedUser = JSON.parse(userData);
         setUser(parsedUser);
+        setIsAuthenticated(true);
         api.setToken(token);
+        console.log('Restored user session:', parsedUser.email);
       } catch (error) {
         console.error('Error parsing stored user data:', error);
         localStorage.removeItem('token');
         localStorage.removeItem('user');
+        setIsAuthenticated(false);
       }
     }
    
@@ -49,9 +54,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const response = await api.login({ email, password });
       console.log('API login response:', response);
      
-      if (response.success) {
-        setUser(response.user);
+      if (response.success && response.token && response.user) {
+        // Store token in localStorage
+        localStorage.setItem('token', response.token);
         localStorage.setItem('user', JSON.stringify(response.user));
+        
+        // Set token in API client
+        api.setToken(response.token);
+        
+        // Update state
+        setUser(response.user);
+        setIsAuthenticated(true);
+        
+        console.log('Login successful, token stored:', response.token ? 'Yes' : 'No');
         toast.success('Login successful!');
         return true;
       } else {
@@ -73,6 +88,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         errorMessage = 'Network error. Please check your connection.';
       } else if (error.message?.includes('CORS')) {
         errorMessage = 'Connection error. Please try again.';
+      } else if (error.message?.includes('403')) {
+        errorMessage = 'Access forbidden. Please check your credentials.';
+      } else if (error.message?.includes('401')) {
+        errorMessage = 'Invalid email or password.';
       } else if (error.response?.status === 404) {
         errorMessage = 'Login service not found. Please contact support.';
       } else if (error.response?.status === 500) {
@@ -90,9 +109,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = () => {
     setUser(null);
+    setIsAuthenticated(false);
     api.logout();
+    localStorage.removeItem('token');
     localStorage.removeItem('user');
     toast.success('Logged out successfully');
+    console.log('User logged out, session cleared');
   };
 
   const hasRole = (roles: string[]): boolean => {
@@ -114,6 +136,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const value: AuthContextType = {
     user,
     loading,
+    isAuthenticated,
     login,
     logout,
     hasRole,
