@@ -1,6 +1,6 @@
 'use client';
-import { useState, useEffect } from 'react';
-import { Book, BookFilters } from './book';
+import { useState, useEffect, useCallback } from 'react';
+import { Book, BookFilters, CreateBookRequest } from './book';
 import { libraryApi } from '@/lib/api';
 import BookGrid from './components/BookGrid';
 import BookFiltersComponent from './components/BookFilters';
@@ -30,20 +30,26 @@ export default function BooksPage() {
     borrowedCopies: 0,
   });
 
-  useEffect(() => {
-    loadBooks();
-  }, [filters]);
-
-  const loadBooks = async () => {
+  const loadBooks = useCallback(async () => {
     try {
       setLoading(true);
       const response = await libraryApi.getBooks(filters);
       
       if (response.success) {
-        setBooks(response.data);
-        setFilteredBooks(response.data);
-        setPagination(response.pagination);
-        setSummary(response.summary);
+        setBooks(response.data.data);
+        setFilteredBooks(response.data.data);
+        setPagination(response.data.pagination || {
+          page: 1,
+          limit: 20,
+          total: 0,
+          totalPages: 0,
+        });
+        setSummary(response.data.summary || {
+          totalBooks: 0,
+          totalCopies: 0,
+          availableCopies: 0,
+          borrowedCopies: 0,
+        });
       }
     } catch (error) {
       console.error('Failed to load books:', error);
@@ -51,9 +57,13 @@ export default function BooksPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filters]);
 
-  const handleAddBook = async (newBook: any) => {
+  useEffect(() => {
+    loadBooks();
+  }, [loadBooks]);
+
+  const handleAddBook = async (newBook: CreateBookRequest) => {
     try {
       const response = await libraryApi.createBook(newBook);
       if (response.success) {
@@ -137,12 +147,12 @@ export default function BooksPage() {
             <div>
               <h1 className="text-3xl font-bold text-gray-900">Book Management</h1>
               <p className="mt-2 text-lg text-gray-600">
-                Manage your library's book collection efficiently
+                Manage your library&apos;s book collection efficiently
               </p>
             </div>
             <button
               onClick={() => setIsAddModalOpen(true)}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg flex items-center space-x-3 transition-all duration-200 shadow-sm hover:shadow-md"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 sm:px-6 py-3 rounded-lg flex items-center space-x-2 sm:space-x-3 transition-all duration-200 shadow-sm hover:shadow-md w-full sm:w-auto justify-center"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -163,7 +173,7 @@ export default function BooksPage() {
 
         {/* Books Grid */}
         <div className="mb-8">
-          <div className="flex justify-between items-center mb-4">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-4">
             <h2 className="text-xl font-semibold text-gray-900">
               Books ({filteredBooks.length})
             </h2>
@@ -181,23 +191,23 @@ export default function BooksPage() {
 
         {/* Pagination */}
         {pagination.totalPages > 1 && (
-          <div className="flex justify-center items-center space-x-2">
+          <div className="flex flex-col sm:flex-row justify-center items-center space-y-3 sm:space-y-0 sm:space-x-4">
             <button
               onClick={() => handlePageChange(pagination.page - 1)}
               disabled={pagination.page === 1}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors w-full sm:w-auto"
             >
               Previous
             </button>
             
-            <span className="text-sm text-gray-700">
+            <span className="text-sm text-gray-700 px-4 py-2">
               Page {pagination.page} of {pagination.totalPages}
             </span>
             
             <button
               onClick={() => handlePageChange(pagination.page + 1)}
               disabled={pagination.page === pagination.totalPages}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors w-full sm:w-auto"
             >
               Next
             </button>

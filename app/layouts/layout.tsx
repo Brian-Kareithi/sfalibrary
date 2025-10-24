@@ -7,12 +7,9 @@ import { cn } from '@/lib/utils';
 import {
   Home,
   ClipboardList,
-  BookOpen,
-  Settings,
   ArrowUpDown,
   Menu,
   X,
-  FileText,
   NotebookText,
 } from 'lucide-react';
 import UserInfoandLogout from '../components/logout';
@@ -136,7 +133,7 @@ export default function Layout({ children }: { children: ReactNode }) {
 
       {/* Top Bar */}
       <div className="fixed top-0 left-0 right-0 z-50 h-16 bg-gradient-to-r from-white/10 via-white/5 to-transparent backdrop-blur-xl border-b border-[#26658C]/40 shadow-lg">
-        <div className="flex items-center justify-between h-full px-6">
+        <div className="flex items-center justify-between h-full px-4 sm:px-6">
           {/* Collapse Button - Left Side */}
           <button
             onClick={toggleSidebar}
@@ -149,18 +146,18 @@ export default function Layout({ children }: { children: ReactNode }) {
           {/* Mobile Menu Button - Left Side */}
           <button
             onClick={() => setSidebarOpen(true)}
-            className="md:hidden text-[#A7EBF2] hover:text-white transition"
+            className="md:hidden text-[#A7EBF2] hover:text-white transition p-2"
             aria-label="Open menu"
           >
-            <Menu className="h-6 w-6" />
+            <Menu className="h-5 w-5 sm:h-6 sm:w-6" />
           </button>
           
           {/* School Logo - Center/Right */}
-          <div className="flex items-center gap-3 ml-auto md:ml-0">
-            <div className="w-10 h-10 bg-gradient-to-br from-cyan-400 to-teal-300 rounded-lg flex items-center justify-center shadow-lg">
-              <span className="text-[#011C40] font-bold text-lg">S</span>
+          <div className="flex items-center gap-2 sm:gap-3 ml-auto md:ml-0">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-cyan-400 to-teal-300 rounded-lg flex items-center justify-center shadow-lg">
+              <span className="text-[#011C40] font-bold text-sm sm:text-lg">S</span>
             </div>
-            <span className="text-lg font-light text-white hidden sm:block">Steadfast Academy Library</span>
+            <span className="text-sm sm:text-lg font-light text-white hidden sm:block">Steadfast Academy Library</span>
           </div>
         </div>
       </div>
@@ -189,9 +186,9 @@ export default function Layout({ children }: { children: ReactNode }) {
             <button
               onClick={() => setSidebarOpen(false)}
               aria-label="Close menu"
-              className="text-[#A7EBF2] hover:text-white transition"
+              className="text-[#A7EBF2] hover:text-white transition p-2"
             >
-              <X className="h-6 w-6" />
+              <X className="h-5 w-5" />
             </button>
           </div>
 
@@ -215,7 +212,7 @@ export default function Layout({ children }: { children: ReactNode }) {
                   href={href}
                   onClick={() => setSidebarOpen(false)}
                   className={cn(
-                    'relative flex items-center gap-3 px-4 py-2 rounded-xl group transition-all duration-300 ease-in-out overflow-hidden',
+                    'relative flex items-center gap-3 px-3 sm:px-4 py-2 sm:py-3 rounded-xl group transition-all duration-300 ease-in-out overflow-hidden',
                     'before:absolute before:inset-0 before:bg-gradient-to-r before:from-cyan-400/30 before:to-teal-300/30 before:opacity-0 before:blur-xl before:transition-opacity before:duration-300 before:rounded-xl',
                     isActive
                       ? 'bg-white/20 backdrop-blur-lg border border-white/30 shadow-[0_0_20px_rgba(83,215,255,0.3)] before:opacity-100'
@@ -226,13 +223,13 @@ export default function Layout({ children }: { children: ReactNode }) {
                 >
                   <Icon
                     className={cn(
-                      'h-5 w-5 transition-transform flex-shrink-0 drop-shadow-md',
+                      'h-4 w-4 sm:h-5 sm:w-5 transition-transform flex-shrink-0 drop-shadow-md',
                       isActive ? 'scale-110 text-white' : 'group-hover:scale-110 text-[#A7EBF2]'
                     )}
                   />
                   <span
                     className={cn(
-                      'text-sm font-medium transition-opacity duration-300',
+                      'text-xs sm:text-sm font-medium transition-opacity duration-300',
                       sidebarCollapsed ? 'lg:opacity-0 lg:absolute' : 'opacity-100'
                     )}
                   >
@@ -257,11 +254,11 @@ export default function Layout({ children }: { children: ReactNode }) {
         {/* Main Content */}
         <div className="flex-1 flex flex-col overflow-hidden transition-all duration-500">
           {/* Authentication Status Indicator */}
-          <div className="px-6 py-2 bg-green-500/20 border-b border-green-500/30">
-            <div className="flex items-center justify-between text-sm">
+          <div className="px-4 sm:px-6 py-2 bg-green-500/20 border-b border-green-500/30">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between text-sm gap-1 sm:gap-0">
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                <span className="text-green-200">
+                <span className="text-green-200 text-xs sm:text-sm">
                   Authenticated as: {user?.name || 'User'}
                 </span>
               </div>
@@ -272,7 +269,7 @@ export default function Layout({ children }: { children: ReactNode }) {
           </div>
 
           {/* Children */}
-          <main className="flex-1 p-4 md:p-6 overflow-y-auto bg-white/5 backdrop-blur-lg border-l border-white/10 shadow-inner">
+          <main className="flex-1 p-3 sm:p-4 md:p-6 overflow-y-auto bg-white/5 backdrop-blur-lg border-l border-white/10 shadow-inner">
             {children}
           </main>
         </div>

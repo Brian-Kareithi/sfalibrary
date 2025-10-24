@@ -1,8 +1,25 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { api, User } from '../lib/api';
+import { libraryApi } from '../lib/api';
 import { toast } from 'react-hot-toast';
+
+// Define User interface locally
+interface User {
+  id: string;
+  name: string;
+  email: string;
+  phone: string | null;
+  address: string | null;
+  dateOfBirth: string | null;
+  gender: string | null;
+  role: 'ADMIN' | 'STUDENT' | 'TEACHER' | 'LIBRARIAN' | 'STAFF';
+  status: 'ACTIVE' | 'INACTIVE';
+  registrationNumber: string;
+  profileCompleted: boolean;
+  lastLoginAt: string;
+  createdAt: string;
+}
 
 interface AuthContextType {
   user: User | null;
@@ -33,7 +50,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const parsedUser = JSON.parse(userData);
         setUser(parsedUser);
         setIsAuthenticated(true);
-        api.setToken(token);
+        libraryApi.setToken(token);
         console.log('Restored user session:', parsedUser.email);
       } catch (error) {
         console.error('Error parsing stored user data:', error);
@@ -51,7 +68,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setLoading(true);
       console.log('Attempting login for:', email);
       
-      const response = await api.login({ email, password });
+      const response = await libraryApi.login({ email, password });
       console.log('API login response:', response);
      
       if (response.success && response.token && response.user) {
@@ -60,7 +77,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         localStorage.setItem('user', JSON.stringify(response.user));
         
         // Set token in API client
-        api.setToken(response.token);
+        libraryApi.setToken(response.token);
         
         // Update state
         setUser(response.user);
@@ -110,7 +127,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = () => {
     setUser(null);
     setIsAuthenticated(false);
-    api.logout();
+    libraryApi.clearToken();
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     toast.success('Logged out successfully');

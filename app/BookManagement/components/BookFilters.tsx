@@ -1,6 +1,5 @@
 import { BookFilters as BookFiltersType } from '../book';
-import { useState, useEffect } from 'react';
-import { libraryApi } from '@/lib/api';
+import { useState } from 'react';
 
 interface BookFiltersProps {
   filters: BookFiltersType;
@@ -17,7 +16,7 @@ const categories = [
 export default function BookFilters({ filters, onFiltersChange }: BookFiltersProps) {
   const [availableLimits] = useState([10, 20, 50, 100]);
 
-  const updateFilter = (key: keyof BookFiltersType, value: any) => {
+  const updateFilter = <K extends keyof BookFiltersType>(key: K, value: BookFiltersType[K]) => {
     onFiltersChange({
       ...filters,
       [key]: value,
@@ -40,10 +39,10 @@ export default function BookFilters({ filters, onFiltersChange }: BookFiltersPro
     filters.search;
 
   return (
-    <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 mb-8">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
-        {/* Search */}
-        <div className="lg:col-span-2">
+    <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-200 mb-6">
+      <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
+        {/* Search - Full width on mobile, spans 2 columns on larger screens */}
+        <div className="xs:col-span-2 md:col-span-3 lg:col-span-2">
           <label htmlFor="search" className="block text-sm font-medium text-gray-700 mb-2">
             Search Books
           </label>
@@ -52,13 +51,13 @@ export default function BookFilters({ filters, onFiltersChange }: BookFiltersPro
             id="search"
             placeholder="Search in title, author, ISBN, description..."
             value={filters.search || ''}
-            onChange={(e) => updateFilter('search', e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
+            onChange={(e) => updateFilter('search', e.target.value || undefined)}
+            className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white placeholder-gray-500 text-sm sm:text-base"
           />
         </div>
 
         {/* Category Filter */}
-        <div>
+        <div className="xs:col-span-1">
           <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-2">
             Category
           </label>
@@ -66,7 +65,7 @@ export default function BookFilters({ filters, onFiltersChange }: BookFiltersPro
             id="category"
             value={filters.category || ''}
             onChange={(e) => updateFilter('category', e.target.value || undefined)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
+            className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white text-sm sm:text-base"
           >
             <option value="" className="text-gray-500">All Categories</option>
             {categories.map(category => (
@@ -78,7 +77,7 @@ export default function BookFilters({ filters, onFiltersChange }: BookFiltersPro
         </div>
 
         {/* Format Filter */}
-        <div>
+        <div className="xs:col-span-1">
           <label htmlFor="format" className="block text-sm font-medium text-gray-700 mb-2">
             Format
           </label>
@@ -86,7 +85,7 @@ export default function BookFilters({ filters, onFiltersChange }: BookFiltersPro
             id="format"
             value={filters.format || ''}
             onChange={(e) => updateFilter('format', e.target.value || undefined)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
+            className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white text-sm sm:text-base"
           >
             <option value="" className="text-gray-500">All Formats</option>
             <option value="PHYSICAL" className="text-gray-900">Physical</option>
@@ -95,7 +94,7 @@ export default function BookFilters({ filters, onFiltersChange }: BookFiltersPro
         </div>
 
         {/* Availability Filter */}
-        <div>
+        <div className="xs:col-span-1">
           <label htmlFor="available" className="block text-sm font-medium text-gray-700 mb-2">
             Availability
           </label>
@@ -103,7 +102,7 @@ export default function BookFilters({ filters, onFiltersChange }: BookFiltersPro
             id="available"
             value={filters.available === undefined ? '' : filters.available.toString()}
             onChange={(e) => updateFilter('available', e.target.value === '' ? undefined : e.target.value === 'true')}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
+            className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white text-sm sm:text-base"
           >
             <option value="" className="text-gray-500">All</option>
             <option value="true" className="text-gray-900">Available</option>
@@ -112,7 +111,7 @@ export default function BookFilters({ filters, onFiltersChange }: BookFiltersPro
         </div>
 
         {/* Items per page */}
-        <div>
+        <div className="xs:col-span-1">
           <label htmlFor="limit" className="block text-sm font-medium text-gray-700 mb-2">
             Items per page
           </label>
@@ -120,7 +119,7 @@ export default function BookFilters({ filters, onFiltersChange }: BookFiltersPro
             id="limit"
             value={filters.limit || 20}
             onChange={(e) => updateFilter('limit', parseInt(e.target.value))}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
+            className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white text-sm sm:text-base"
           >
             {availableLimits.map(limit => (
               <option key={limit} value={limit} className="text-gray-900">
@@ -136,7 +135,7 @@ export default function BookFilters({ filters, onFiltersChange }: BookFiltersPro
         <div className="mt-4 flex justify-end">
           <button
             onClick={clearFilters}
-            className="text-sm text-blue-600 hover:text-blue-800 font-medium px-3 py-1 rounded hover:bg-blue-50 transition-colors"
+            className="text-sm text-blue-600 hover:text-blue-800 font-medium px-3 py-2 rounded-lg hover:bg-blue-50 transition-colors border border-blue-200 hover:border-blue-300"
           >
             Clear all filters
           </button>

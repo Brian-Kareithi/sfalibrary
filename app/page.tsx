@@ -535,7 +535,7 @@ export default function Dashboard() {
         {/* Quick Actions */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <Link
-            href="/books"
+            href="/BookManagement"
             className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow group"
           >
             <div className="flex items-center">
@@ -552,7 +552,7 @@ export default function Dashboard() {
           </Link>
 
           <Link
-            href="/loans"
+            href="/Loan"
             className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow group"
           >
             <div className="flex items-center">

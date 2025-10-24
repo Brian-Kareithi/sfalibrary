@@ -73,7 +73,7 @@ export default function AddBookModal({ isOpen, onClose, onAddBook }: AddBookModa
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
     
-    let processedValue: any = value;
+    let processedValue: string | number | boolean = value;
     
     if (type === 'number') {
       processedValue = value === '' ? 0 : Number(value);
@@ -102,6 +102,7 @@ export default function AddBookModal({ isOpen, onClose, onAddBook }: AddBookModa
             <button
               onClick={onClose}
               className="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100 transition-colors"
+              aria-label="Close modal"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -127,7 +128,7 @@ export default function AddBookModal({ isOpen, onClose, onAddBook }: AddBookModa
                   required
                   value={formData.title}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white placeholder-gray-500"
                   placeholder="Enter book title"
                 />
               </div>
@@ -143,7 +144,7 @@ export default function AddBookModal({ isOpen, onClose, onAddBook }: AddBookModa
                   required
                   value={formData.author}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white placeholder-gray-500"
                   placeholder="Enter author name"
                 />
               </div>
@@ -158,7 +159,7 @@ export default function AddBookModal({ isOpen, onClose, onAddBook }: AddBookModa
                   name="isbn"
                   value={formData.isbn}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white placeholder-gray-500"
                   placeholder="Enter ISBN number"
                 />
               </div>
@@ -232,7 +233,7 @@ export default function AddBookModal({ isOpen, onClose, onAddBook }: AddBookModa
                   name="publisher"
                   value={formData.publisher}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white placeholder-gray-500"
                   placeholder="Enter publisher name"
                 />
               </div>
@@ -263,7 +264,7 @@ export default function AddBookModal({ isOpen, onClose, onAddBook }: AddBookModa
                   name="edition"
                   value={formData.edition}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white placeholder-gray-500"
                   placeholder="e.g., 1st, 2nd, 3rd"
                 />
               </div>
@@ -310,7 +311,7 @@ export default function AddBookModal({ isOpen, onClose, onAddBook }: AddBookModa
                   name="deweyDecimal"
                   value={formData.deweyDecimal}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white placeholder-gray-500"
                   placeholder="e.g., 005.1"
                 />
               </div>
@@ -325,7 +326,7 @@ export default function AddBookModal({ isOpen, onClose, onAddBook }: AddBookModa
                   name="location"
                   value={formData.location}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white placeholder-gray-500"
                   placeholder="e.g., A1-Shelf-3"
                 />
               </div>
@@ -340,7 +341,7 @@ export default function AddBookModal({ isOpen, onClose, onAddBook }: AddBookModa
                   name="barcode"
                   value={formData.barcode}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white placeholder-gray-500"
                   placeholder="Enter barcode"
                 />
               </div>
@@ -412,7 +413,7 @@ export default function AddBookModal({ isOpen, onClose, onAddBook }: AddBookModa
                 />
               </div>
 
-              <div className="flex items-center">
+              <div className="flex items-center md:col-span-2">
                 <input
                   type="checkbox"
                   id="isReservable"
@@ -437,7 +438,7 @@ export default function AddBookModal({ isOpen, onClose, onAddBook }: AddBookModa
                 name="coverImageUrl"
                 value={formData.coverImageUrl}
                 onChange={handleChange}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white placeholder-gray-500"
                 placeholder="https://example.com/book-cover.jpg"
               />
             </div>
@@ -452,22 +453,22 @@ export default function AddBookModal({ isOpen, onClose, onAddBook }: AddBookModa
                 rows={4}
                 value={formData.description}
                 onChange={handleChange}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white resize-vertical"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white placeholder-gray-500 resize-vertical"
                 placeholder="Enter book description..."
               />
             </div>
 
-            <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200">
+            <div className="flex flex-col sm:flex-row justify-end space-y-3 sm:space-y-0 sm:space-x-4 pt-6 border-t border-gray-200">
               <button
                 type="button"
                 onClick={onClose}
-                className="px-6 py-3 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors duration-200"
+                className="px-6 py-3 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors duration-200 w-full sm:w-auto"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="px-6 py-3 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors duration-200 shadow-sm"
+                className="px-6 py-3 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors duration-200 shadow-sm w-full sm:w-auto"
               >
                 Add Book
               </button>

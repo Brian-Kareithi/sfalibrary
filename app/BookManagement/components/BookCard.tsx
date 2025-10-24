@@ -1,5 +1,6 @@
 import { Book } from '../book';
 import { useState } from 'react';
+import Image from 'next/image';
 
 interface BookCardProps {
   book: Book;
@@ -42,10 +43,14 @@ export default function BookCard({ book, onDelete, onUpdateStatus, onUpdateCopie
         {/* Book Cover */}
         <div className="h-48 bg-gray-100 flex items-center justify-center relative">
           {book.coverImageUrl ? (
-            <img 
+            <Image 
               src={book.coverImageUrl} 
               alt={book.title}
+              width={200}
+              height={192}
               className="h-full w-full object-cover"
+              placeholder="blur"
+              blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R"
             />
           ) : (
             <div className="text-center text-gray-400">
@@ -63,14 +68,14 @@ export default function BookCard({ book, onDelete, onUpdateStatus, onUpdateCopie
         </div>
 
         {/* Book Info */}
-        <div className="p-5">
+        <div className="p-4 sm:p-5">
           <div className="mb-3">
             <h3 className="font-bold text-lg text-gray-900 line-clamp-2 leading-tight mb-1">{book.title}</h3>
             <p className="text-gray-600 text-sm font-medium">by {book.author}</p>
           </div>
           
           <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
-            <span className="bg-gray-100 px-2 py-1 rounded text-xs font-medium">
+            <span className="bg-gray-100 px-2 py-1 rounded text-xs font-medium max-w-[120px] truncate">
               {book.category.replace('_', ' ')}
             </span>
             <span className="font-medium">{book.publicationYear}</span>
@@ -78,27 +83,29 @@ export default function BookCard({ book, onDelete, onUpdateStatus, onUpdateCopie
 
           {/* Quick Stats */}
           <div className="flex justify-between text-sm text-gray-600 mb-4">
-            <div className="text-center">
+            <div className="text-center flex-1">
               <div className={`font-semibold ${getAvailabilityColor(book.availableCopies)}`}>
                 {book.availableCopies}/{book.totalCopies}
               </div>
               <div className="text-xs text-gray-500">Available</div>
             </div>
-            <div className="text-center">
+            <div className="text-center flex-1">
               <div className="font-semibold text-gray-900">{book.borrowedCopies}</div>
               <div className="text-xs text-gray-500">Borrowed</div>
             </div>
-            <div className="text-center">
-              <div className="font-semibold text-gray-900">{book.format}</div>
+            <div className="text-center flex-1">
+              <div className="font-semibold text-gray-900 text-xs sm:text-sm">
+                {book.format}
+              </div>
               <div className="text-xs text-gray-500">Format</div>
             </div>
           </div>
 
           {/* Actions */}
-          <div className="flex justify-between items-center pt-3 border-t border-gray-100">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center pt-3 border-t border-gray-100 gap-3 sm:gap-0">
             <button
               onClick={() => setShowDetails(!showDetails)}
-              className="text-blue-600 hover:text-blue-800 text-sm font-semibold flex items-center space-x-1 transition-colors"
+              className="text-blue-600 hover:text-blue-800 text-sm font-semibold flex items-center space-x-1 transition-colors w-full sm:w-auto justify-center sm:justify-start"
             >
               <span>{showDetails ? 'Hide Details' : 'View Details'}</span>
               <svg className={`w-4 h-4 transition-transform ${showDetails ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -106,30 +113,32 @@ export default function BookCard({ book, onDelete, onUpdateStatus, onUpdateCopie
               </svg>
             </button>
 
-            <div className="flex space-x-2">
+            <div className="flex space-x-2 w-full sm:w-auto justify-center sm:justify-start">
               <button
                 onClick={() => setShowCopiesModal(true)}
-                className="text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1 rounded-lg transition-colors"
+                className="text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 sm:py-1 rounded-lg transition-colors flex items-center justify-center"
                 title="Update copies"
               >
-                📚
+                <span className="hidden sm:inline">📚</span>
+                <span className="sm:hidden">Update Copies</span>
               </button>
               
               <button
                 onClick={() => onUpdateStatus(book.id, !book.isActive)}
-                className={`text-sm px-3 py-1 rounded-lg transition-colors ${
+                className={`text-sm px-3 py-2 sm:py-1 rounded-lg transition-colors flex items-center justify-center ${
                   book.isActive 
                     ? 'bg-yellow-100 hover:bg-yellow-200 text-yellow-700' 
                     : 'bg-green-100 hover:bg-green-200 text-green-700'
                 }`}
                 title={book.isActive ? 'Deactivate' : 'Activate'}
               >
-                {book.isActive ? '⏸️' : '▶️'}
+                <span className="hidden sm:inline">{book.isActive ? '⏸️' : '▶️'}</span>
+                <span className="sm:hidden text-xs">{book.isActive ? 'Deactivate' : 'Activate'}</span>
               </button>
               
               <button
                 onClick={() => onDelete(book.id)}
-                className="text-red-600 hover:text-red-800 p-1 rounded-lg hover:bg-red-50 transition-colors"
+                className="text-red-600 hover:text-red-800 p-2 sm:p-1 rounded-lg hover:bg-red-50 transition-colors flex items-center justify-center"
                 title="Delete book"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -145,7 +154,7 @@ export default function BookCard({ book, onDelete, onUpdateStatus, onUpdateCopie
               <p className="text-sm text-gray-600 mb-3 leading-relaxed line-clamp-3">
                 {book.description || 'No description available.'}
               </p>
-              <div className="grid grid-cols-2 gap-3 text-sm text-gray-600">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-gray-600">
                 <div>
                   <span className="font-semibold text-gray-900">Publisher:</span> {book.publisher || 'N/A'}
                 </div>
@@ -178,7 +187,7 @@ export default function BookCard({ book, onDelete, onUpdateStatus, onUpdateCopie
       {/* Copies Update Modal */}
       {showCopiesModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl p-6 max-w-sm w-full">
+          <div className="bg-white rounded-xl p-6 max-w-sm w-full mx-4">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Update Book Copies</h3>
             <div className="space-y-4">
               <div>
@@ -189,23 +198,26 @@ export default function BookCard({ book, onDelete, onUpdateStatus, onUpdateCopie
                   type="number"
                   min={book.borrowedCopies}
                   value={newCopies}
-                  onChange={(e) => setNewCopies(parseInt(e.target.value))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  onChange={(e) => setNewCopies(parseInt(e.target.value) || 0)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
                 />
                 <p className="text-xs text-gray-500 mt-1">
                   Currently borrowed: {book.borrowedCopies}
                 </p>
+                <p className="text-xs text-gray-500">
+                  Minimum allowed: {book.borrowedCopies}
+                </p>
               </div>
-              <div className="flex justify-end space-x-3">
+              <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-3">
                 <button
                   onClick={() => setShowCopiesModal(false)}
-                  className="px-4 py-2 text-sm text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
+                  className="px-4 py-2 text-sm text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors w-full sm:w-auto"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleCopiesUpdate}
-                  className="px-4 py-2 text-sm text-white bg-blue-600 rounded-lg hover:bg-blue-700"
+                  className="px-4 py-2 text-sm text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors w-full sm:w-auto"
                 >
                   Update
                 </button>

@@ -1,6 +1,23 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { api, type User } from '@/lib/api';
+import { libraryApi } from '@/lib/api';
+
+// Define User interface locally since it's not exported from the API
+interface User {
+  id: string;
+  name: string;
+  email: string;
+  phone: string | null;
+  address: string | null;
+  dateOfBirth: string | null;
+  gender: string | null;
+  role: 'ADMIN' | 'STUDENT' | 'TEACHER' | 'LIBRARIAN' | 'STAFF';
+  status: 'ACTIVE' | 'INACTIVE';
+  registrationNumber: string;
+  profileCompleted: boolean;
+  lastLoginAt: string;
+  createdAt: string;
+}
 
 function UserInfoAndLogout() {
   const [user, setUser] = useState<User | null>(null);
@@ -9,9 +26,9 @@ function UserInfoAndLogout() {
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const response = await api.getMe();
+        const response = await libraryApi.getMe();
         console.log(response);
-        setUser(response.user as unknown as User);
+        setUser(response.data as User);
       } catch (err) {
         console.error('Failed to fetch user:', err);
       }
@@ -21,7 +38,7 @@ function UserInfoAndLogout() {
 
   const handleLogout = async () => {
     try {
-      await api.logout();
+      libraryApi.clearToken();
       router.push('/login');
     } catch (err) {
       console.error('Logout failed:', err);
@@ -34,6 +51,7 @@ function UserInfoAndLogout() {
         <>
           <div className="text-sm text-white/80 mb-3">
             <p>{user.name}</p>
+            <p className="text-xs text-white/60">{user.role.toLowerCase()}</p>
           </div>
           <button
             onClick={handleLogout}
