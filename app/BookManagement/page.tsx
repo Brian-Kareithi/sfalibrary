@@ -1,20 +1,36 @@
 'use client';
 import { useState, useEffect, useCallback } from 'react';
+import { toast } from 'react-hot-toast';
 import { Book, BookFilters, CreateBookRequest } from './book';
 import { libraryApi } from '@/lib/api';
 import BookGrid from './components/BookGrid';
 import BookFiltersComponent from './components/BookFilters';
 import BookStats from './components/BookStats';
 import AddBookModal from './components/AddBookModal';
-import { toast } from 'react-hot-toast';
+
+// Define a more flexible interface for API responses
+interface ApiBookResponse {
+  data?: Book[];
+  books?: Book[];
+  items?: Book[];
+  pagination?: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+  summary?: {
+    totalBooks: number;
+    totalCopies: number;
+    availableCopies: number;
+    borrowedCopies: number;
+  };
+}
 
 export default function BooksPage() {
   const [books, setBooks] = useState<Book[]>([]);
   const [filteredBooks, setFilteredBooks] = useState<Book[]>([]);
-  const [filters, setFilters] = useState<BookFilters>({
-    page: 1,
-    limit: 20,
-  });
+  const [filters, setFilters] = useState<BookFilters>({ page: 1, limit: 20 });
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [pagination, setPagination] = useState({
@@ -34,26 +50,83 @@ export default function BooksPage() {
     try {
       setLoading(true);
       const response = await libraryApi.getBooks(filters);
-      
-      if (response.success) {
-        setBooks(response.data.data);
-        setFilteredBooks(response.data.data);
-        setPagination(response.data.pagination || {
-          page: 1,
-          limit: 20,
-          total: 0,
-          totalPages: 0,
-        });
-        setSummary(response.data.summary || {
-          totalBooks: 0,
-          totalCopies: 0,
-          availableCopies: 0,
-          borrowedCopies: 0,
-        });
+
+      // Handle response safely
+      if (!response?.success) {
+        throw new Error(response?.message || 'Failed to load books');
       }
+
+      const responseData = response.data;
+      
+      // Handle different possible response structures with proper type checking
+      let booksData: Book[] = [];
+      let paginationData = {
+        page: filters.page || 1,
+        limit: filters.limit || 20,
+        total: 0,
+        totalPages: 0,
+      };
+      let summaryData = {
+        totalBooks: 0,
+        totalCopies: 0,
+        availableCopies: 0,
+        borrowedCopies: 0,
+      };
+
+      if (Array.isArray(responseData)) {
+        // If response.data is directly an array
+        booksData = responseData;
+        paginationData.total = booksData.length;
+        paginationData.totalPages = Math.ceil(booksData.length / paginationData.limit);
+        summaryData.totalBooks = booksData.length;
+      } else if (responseData && typeof responseData === 'object') {
+        // If response.data is an object with nested structure - use proper type checking
+        const data = responseData as ApiBookResponse;
+        
+        // Safely extract books data using proper type checking
+        if (data.data && Array.isArray(data.data)) {
+          booksData = data.data;
+        } else if (data.books && Array.isArray(data.books)) {
+          booksData = data.books;
+        } else if (data.items && Array.isArray(data.items)) {
+          booksData = data.items;
+        } else {
+          booksData = [];
+        }
+        
+        // Handle pagination from response
+        if (data.pagination) {
+          paginationData = { ...paginationData, ...data.pagination };
+        } else {
+          paginationData.total = booksData.length;
+          paginationData.totalPages = Math.ceil(booksData.length / paginationData.limit);
+        }
+
+        // Handle summary from response
+        if (data.summary) {
+          summaryData = { ...summaryData, ...data.summary };
+        } else {
+          summaryData.totalBooks = booksData.length;
+        }
+      }
+
+      // Calculate summary if not provided
+      if (summaryData.totalBooks === 0) {
+        summaryData.totalBooks = booksData.length;
+        summaryData.totalCopies = booksData.reduce((sum, book) => sum + (book.totalCopies || 0), 0);
+        summaryData.availableCopies = booksData.reduce((sum, book) => sum + (book.availableCopies || 0), 0);
+        summaryData.borrowedCopies = booksData.reduce((sum, book) => sum + (book.borrowedCopies || 0), 0);
+      }
+
+      setBooks(booksData);
+      setFilteredBooks(booksData);
+      setPagination(paginationData);
+      setSummary(summaryData);
     } catch (error) {
       console.error('Failed to load books:', error);
       toast.error('Failed to load books');
+      setBooks([]);
+      setFilteredBooks([]);
     } finally {
       setLoading(false);
     }
@@ -66,10 +139,12 @@ export default function BooksPage() {
   const handleAddBook = async (newBook: CreateBookRequest) => {
     try {
       const response = await libraryApi.createBook(newBook);
-      if (response.success) {
+      if (response?.success) {
         toast.success('Book created successfully');
         setIsAddModalOpen(false);
-        loadBooks(); // Reload to get the updated list
+        await loadBooks();
+      } else {
+        toast.error(response?.message || 'Failed to create book');
       }
     } catch (error) {
       console.error('Failed to create book:', error);
@@ -78,15 +153,18 @@ export default function BooksPage() {
   };
 
   const handleDeleteBook = async (bookId: string) => {
-    if (!confirm('Are you sure you want to delete this book? This action cannot be undone.')) {
-      return;
-    }
+    const confirmed = window.confirm(
+      'Are you sure you want to delete this book? This action cannot be undone.'
+    );
+    if (!confirmed) return;
 
     try {
       const response = await libraryApi.deleteBook(bookId);
-      if (response.success) {
+      if (response?.success) {
         toast.success('Book deleted successfully');
-        loadBooks(); // Reload to get the updated list
+        await loadBooks();
+      } else {
+        toast.error(response?.message || 'Failed to delete book');
       }
     } catch (error) {
       console.error('Failed to delete book:', error);
@@ -97,9 +175,11 @@ export default function BooksPage() {
   const handleUpdateStatus = async (bookId: string, isActive: boolean) => {
     try {
       const response = await libraryApi.updateBook(bookId, { isActive });
-      if (response.success) {
+      if (response?.success) {
         toast.success(`Book ${isActive ? 'activated' : 'deactivated'} successfully`);
-        loadBooks(); // Reload to get the updated list
+        await loadBooks();
+      } else {
+        toast.error(response?.message || 'Failed to update book status');
       }
     } catch (error) {
       console.error('Failed to update book status:', error);
@@ -111,11 +191,13 @@ export default function BooksPage() {
     try {
       const response = await libraryApi.updateBookCopies(bookId, {
         totalCopies,
-        operation: 'set'
+        operation: 'set',
       });
-      if (response.success) {
+      if (response?.success) {
         toast.success('Book copies updated successfully');
-        loadBooks(); // Reload to get the updated list
+        await loadBooks();
+      } else {
+        toast.error(response?.message || 'Failed to update book copies');
       }
     } catch (error) {
       console.error('Failed to update book copies:', error);

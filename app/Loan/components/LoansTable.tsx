@@ -1,4 +1,5 @@
 import { Loan } from './loan';
+import Image from 'next/image';
 
 interface LoansTableProps {
   loans: Loan[];
@@ -102,11 +103,17 @@ export default function LoansTable({ loans, loading, onReturnClick, onRenewClick
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex items-center">
                     {loan.book.coverImageUrl ? (
-                      <img
-                        className="h-12 w-9 object-cover rounded"
-                        src={loan.book.coverImageUrl}
-                        alt={loan.book.title}
-                      />
+                      <div className="flex-shrink-0">
+                        <Image
+                          src={loan.book.coverImageUrl}
+                          alt={loan.book.title}
+                          width={36}
+                          height={48}
+                          className="h-12 w-9 object-cover rounded"
+                          placeholder="blur"
+                          blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R"
+                        />
+                      </div>
                     ) : (
                       <div className="h-12 w-9 bg-gray-100 rounded flex items-center justify-center">
                         <svg className="h-6 w-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">

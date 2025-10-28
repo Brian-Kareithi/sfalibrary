@@ -1,4 +1,5 @@
 import { Loan } from './loan';
+import Image from 'next/image';
 
 interface LoanHistoryProps {
   loans: Loan[];
@@ -27,11 +28,17 @@ export default function LoanHistory({ loans }: LoanHistoryProps) {
           <div key={loan.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
             <div className="flex items-start space-x-4">
               {loan.book.coverImageUrl ? (
-                <img
-                  src={loan.book.coverImageUrl}
-                  alt={loan.book.title}
-                  className="w-16 h-20 object-cover rounded-lg"
-                />
+                <div className="flex-shrink-0">
+                  <Image
+                    src={loan.book.coverImageUrl}
+                    alt={loan.book.title}
+                    width={64}
+                    height={80}
+                    className="w-16 h-20 object-cover rounded-lg"
+                    placeholder="blur"
+                    blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R"
+                  />
+                </div>
               ) : (
                 <div className="w-16 h-20 bg-gray-100 rounded-lg flex items-center justify-center">
                   <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">

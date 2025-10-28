@@ -134,8 +134,12 @@ export interface ClassResponse {
 export interface GetClassesResponse {
   classes: ClassResponse[];
   total: number;
-  getClassesResponse?: GetClassesResponse; // For nested responses
-  dropdown?: ClassDropdown[]; // For dropdown options
+  pagination?: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
 }
 
 export interface ClassDropdown {
@@ -169,7 +173,6 @@ export interface Student {
   status: 'ACTIVE' | 'INACTIVE';
   profileCompleted: boolean;
   createdAt: string;
-  // Additional properties for UI/state management
   currentClassId?: string;
   currentStreamId?: string;
   currentClass?: {
@@ -255,7 +258,6 @@ export interface ClassesDropdownResponse {
 // Extended GetClassesResponse with dropdown support
 export interface ExtendedGetClassesResponse extends GetClassesResponse {
   dropdown?: ClassDropdown[];
-  getClassesResponse?: GetClassesResponse;
 }
 
 // Extended Student with current class info
@@ -267,5 +269,25 @@ export interface ExtendedStudent extends Student {
     name: string;
     level: string;
     stream?: string;
+  };
+}
+
+// Additional utility types for better type safety
+export interface PaginationParams {
+  page?: number;
+  limit?: number;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+}
+
+export interface ApiResponse<T> {
+  success: boolean;
+  data: T;
+  message: string;
+  pagination?: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
   };
 }

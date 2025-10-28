@@ -2,10 +2,9 @@ import { Loan } from './loan';
 
 interface LoanStatsProps {
   loans: Loan[];
-  activeTab: string;
 }
 
-export default function LoanStats({ loans, activeTab }: LoanStatsProps) {
+export default function LoanStats({ loans }: LoanStatsProps) {
   const totalLoans = loans.length;
   const activeLoans = loans.filter(loan => loan.status === 'ACTIVE').length;
   const overdueLoans = loans.filter(loan => {
@@ -14,7 +13,6 @@ export default function LoanStats({ loans, activeTab }: LoanStatsProps) {
     const today = new Date();
     return dueDate < today;
   }).length;
-  const returnedLoans = loans.filter(loan => loan.status === 'RETURNED').length;
   
   const totalFines = loans.reduce((sum, loan) => sum + (loan.fineAmount - loan.finePaidAmount - loan.fineWaivedAmount), 0);
 

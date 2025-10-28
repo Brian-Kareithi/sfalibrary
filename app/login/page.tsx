@@ -103,12 +103,6 @@ export default function LoginPage() {
     }
   };
 
-  // Test credentials for development
-  const handleTestCredentials = (testEmail: string, testPassword: string) => {
-    setEmail(testEmail);
-    setPassword(testPassword);
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#011C40] via-[#023859] to-[#26658C] text-white relative overflow-hidden">
       {/* Soft Background Blobs */}
@@ -132,8 +126,6 @@ export default function LoginPage() {
               </h1>
               <p className="text-[#A7EBF2] text-sm">Sign in to your School Library Management account</p>
             </div>
-
-           
 
             {/* Error Display */}
             {error && (
@@ -240,7 +232,6 @@ export default function LoginPage() {
                 )}
               </button>
             </form>
-
 
             {/* Footer */}
             <div className="mt-8 text-center">

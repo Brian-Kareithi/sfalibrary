@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Loan } from './loan';
 import { libraryApi } from '@/lib/api';
 import { toast } from 'react-hot-toast';
+import Image from 'next/image';
 
 interface ReturnBookModalProps {
   isOpen: boolean;
@@ -10,8 +11,10 @@ interface ReturnBookModalProps {
   loan: Loan | null;
 }
 
+type BookCondition = 'EXCELLENT' | 'GOOD' | 'FAIR' | 'POOR' | 'DAMAGED';
+
 export default function ReturnBookModal({ isOpen, onClose, onSuccess, loan }: ReturnBookModalProps) {
-  const [condition, setCondition] = useState<'EXCELLENT' | 'GOOD' | 'FAIR' | 'POOR' | 'DAMAGED'>('GOOD');
+  const [condition, setCondition] = useState<BookCondition>('GOOD');
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -44,8 +47,9 @@ export default function ReturnBookModal({ isOpen, onClose, onSuccess, loan }: Re
         onSuccess();
         resetForm();
       }
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to return book');
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to return book';
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -93,11 +97,17 @@ export default function ReturnBookModal({ isOpen, onClose, onSuccess, loan }: Re
             <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-4">
               <div className="flex items-start space-x-3 mb-3">
                 {loan.book.coverImageUrl ? (
-                  <img
-                    src={loan.book.coverImageUrl}
-                    alt={loan.book.title}
-                    className="w-12 h-16 object-cover rounded-lg shadow-sm"
-                  />
+                  <div className="flex-shrink-0">
+                    <Image
+                      src={loan.book.coverImageUrl}
+                      alt={loan.book.title}
+                      width={48}
+                      height={64}
+                      className="w-12 h-16 object-cover rounded-lg shadow-sm"
+                      placeholder="blur"
+                      blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R"
+                    />
+                  </div>
                 ) : (
                   <div className="w-12 h-16 bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg flex items-center justify-center shadow-sm">
                     <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -195,7 +205,7 @@ export default function ReturnBookModal({ isOpen, onClose, onSuccess, loan }: Re
                     type="radio"
                     value={option.value}
                     checked={condition === option.value}
-                    onChange={(e) => setCondition(e.target.value as any)}
+                    onChange={(e) => setCondition(e.target.value as BookCondition)}
                     className="text-blue-600 focus:ring-blue-500 mt-1"
                   />
                   <div className="flex items-start space-x-3">

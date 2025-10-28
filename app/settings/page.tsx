@@ -36,6 +36,13 @@ interface LibrarySettings {
   };
 }
 
+interface ApiSettings {
+  general?: Partial<LibrarySettings['general']>;
+  borrowing?: Partial<LibrarySettings['borrowing']>;
+  notifications?: Partial<LibrarySettings['notifications']>;
+  security?: Partial<LibrarySettings['security']>;
+}
+
 const defaultSettings: LibrarySettings = {
   general: {
     libraryName: '',
@@ -70,7 +77,7 @@ const defaultSettings: LibrarySettings = {
 };
 
 // Helper function to safely merge API response with defaults
-const mergeSettings = (apiSettings: any): LibrarySettings => {
+const mergeSettings = (apiSettings: ApiSettings | null): LibrarySettings => {
   if (!apiSettings) return defaultSettings;
 
   return {
@@ -116,7 +123,7 @@ export default function SettingsPage() {
       console.log('API Response:', response);
       
       if (response.success) {
-        const mergedSettings = mergeSettings(response.data);
+        const mergedSettings = mergeSettings(response.data as ApiSettings);
         setSettings(mergedSettings);
       } else {
         // If API fails, use defaults but don't throw error
@@ -152,7 +159,11 @@ export default function SettingsPage() {
     }
   };
 
-  const handleSettingChange = (section: keyof LibrarySettings, field: string, value: any) => {
+  const handleSettingChange = <T extends keyof LibrarySettings>(
+    section: T, 
+    field: keyof LibrarySettings[T], 
+    value: LibrarySettings[T][keyof LibrarySettings[T]]
+  ) => {
     setSettings(prev => ({
       ...prev,
       [section]: {
@@ -168,12 +179,6 @@ export default function SettingsPage() {
       setSettings(defaultSettings);
       setHasChanges(true);
     }
-  };
-
-  // Safe value getter with fallback
-  const getSafeValue = (section: keyof LibrarySettings, field: string) => {
-    if (!settings[section]) return '';
-    return (settings[section] as any)[field] ?? '';
   };
 
   if (loading) {
@@ -288,7 +293,7 @@ export default function SettingsPage() {
                         </label>
                         <input
                           type="text"
-                          value={settings.general?.libraryName || ''}
+                          value={settings.general.libraryName}
                           onChange={(e) => handleSettingChange('general', 'libraryName', e.target.value)}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                           placeholder="Enter library name"
@@ -301,7 +306,7 @@ export default function SettingsPage() {
                         </label>
                         <input
                           type="email"
-                          value={settings.general?.libraryEmail || ''}
+                          value={settings.general.libraryEmail}
                           onChange={(e) => handleSettingChange('general', 'libraryEmail', e.target.value)}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                           placeholder="library@example.com"
@@ -314,7 +319,7 @@ export default function SettingsPage() {
                         </label>
                         <input
                           type="tel"
-                          value={settings.general?.libraryPhone || ''}
+                          value={settings.general.libraryPhone}
                           onChange={(e) => handleSettingChange('general', 'libraryPhone', e.target.value)}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                           placeholder="+1 (555) 123-4567"
@@ -329,7 +334,7 @@ export default function SettingsPage() {
                           type="number"
                           min="1"
                           max="20"
-                          value={settings.general?.maxBorrowLimit || 5}
+                          value={settings.general.maxBorrowLimit}
                           onChange={(e) => handleSettingChange('general', 'maxBorrowLimit', parseInt(e.target.value))}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
@@ -342,7 +347,7 @@ export default function SettingsPage() {
                         Library Address
                       </label>
                       <textarea
-                        value={settings.general?.libraryAddress || ''}
+                        value={settings.general.libraryAddress}
                         onChange={(e) => handleSettingChange('general', 'libraryAddress', e.target.value)}
                         rows={3}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -357,7 +362,7 @@ export default function SettingsPage() {
                         </label>
                         <input
                           type="text"
-                          value={settings.general?.openingHours || ''}
+                          value={settings.general.openingHours}
                           onChange={(e) => handleSettingChange('general', 'openingHours', e.target.value)}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                           placeholder="9:00 AM - 6:00 PM"
@@ -372,7 +377,7 @@ export default function SettingsPage() {
                           type="number"
                           min="1"
                           max="30"
-                          value={settings.general?.reservationExpiryDays || 3}
+                          value={settings.general.reservationExpiryDays}
                           onChange={(e) => handleSettingChange('general', 'reservationExpiryDays', parseInt(e.target.value))}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
@@ -396,7 +401,7 @@ export default function SettingsPage() {
                           type="number"
                           min="1"
                           max="365"
-                          value={settings.borrowing?.defaultLoanPeriod || 14}
+                          value={settings.borrowing.defaultLoanPeriod}
                           onChange={(e) => handleSettingChange('borrowing', 'defaultLoanPeriod', parseInt(e.target.value))}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
@@ -411,7 +416,7 @@ export default function SettingsPage() {
                           type="number"
                           min="0"
                           max="10"
-                          value={settings.borrowing?.maxRenewals || 2}
+                          value={settings.borrowing.maxRenewals}
                           onChange={(e) => handleSettingChange('borrowing', 'maxRenewals', parseInt(e.target.value))}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
@@ -426,7 +431,7 @@ export default function SettingsPage() {
                           type="number"
                           min="1"
                           max="365"
-                          value={settings.borrowing?.renewalExtensionDays || 14}
+                          value={settings.borrowing.renewalExtensionDays}
                           onChange={(e) => handleSettingChange('borrowing', 'renewalExtensionDays', parseInt(e.target.value))}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
@@ -441,7 +446,7 @@ export default function SettingsPage() {
                           type="number"
                           min="0"
                           max="7"
-                          value={settings.borrowing?.gracePeriodDays || 1}
+                          value={settings.borrowing.gracePeriodDays}
                           onChange={(e) => handleSettingChange('borrowing', 'gracePeriodDays', parseInt(e.target.value))}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
@@ -459,7 +464,7 @@ export default function SettingsPage() {
                           min="0"
                           max="10"
                           step="0.01"
-                          value={settings.borrowing?.dailyFineAmount || 0.50}
+                          value={settings.borrowing.dailyFineAmount}
                           onChange={(e) => handleSettingChange('borrowing', 'dailyFineAmount', parseFloat(e.target.value))}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
@@ -475,7 +480,7 @@ export default function SettingsPage() {
                           min="0"
                           max="100"
                           step="0.01"
-                          value={settings.borrowing?.maxFineAmount || 50.00}
+                          value={settings.borrowing.maxFineAmount}
                           onChange={(e) => handleSettingChange('borrowing', 'maxFineAmount', parseFloat(e.target.value))}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
@@ -499,7 +504,7 @@ export default function SettingsPage() {
                           type="number"
                           min="1"
                           max="14"
-                          value={settings.notifications?.dueSoonReminderDays || 3}
+                          value={settings.notifications.dueSoonReminderDays}
                           onChange={(e) => handleSettingChange('notifications', 'dueSoonReminderDays', parseInt(e.target.value))}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
@@ -514,7 +519,7 @@ export default function SettingsPage() {
                           type="number"
                           min="1"
                           max="30"
-                          value={settings.notifications?.overdueReminderInterval || 7}
+                          value={settings.notifications.overdueReminderInterval}
                           onChange={(e) => handleSettingChange('notifications', 'overdueReminderInterval', parseInt(e.target.value))}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
@@ -529,14 +534,14 @@ export default function SettingsPage() {
                           <p className="text-xs text-gray-500">Send notifications via email</p>
                         </div>
                         <button
-                          onClick={() => handleSettingChange('notifications', 'sendEmailNotifications', !settings.notifications?.sendEmailNotifications)}
+                          onClick={() => handleSettingChange('notifications', 'sendEmailNotifications', !settings.notifications.sendEmailNotifications)}
                           className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
-                            settings.notifications?.sendEmailNotifications ? 'bg-blue-600' : 'bg-gray-200'
+                            settings.notifications.sendEmailNotifications ? 'bg-blue-600' : 'bg-gray-200'
                           }`}
                         >
                           <span
                             className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                              settings.notifications?.sendEmailNotifications ? 'translate-x-5' : 'translate-x-0'
+                              settings.notifications.sendEmailNotifications ? 'translate-x-5' : 'translate-x-0'
                             }`}
                           />
                         </button>
@@ -548,14 +553,14 @@ export default function SettingsPage() {
                           <p className="text-xs text-gray-500">Send notifications via SMS</p>
                         </div>
                         <button
-                          onClick={() => handleSettingChange('notifications', 'sendSMSNotifications', !settings.notifications?.sendSMSNotifications)}
+                          onClick={() => handleSettingChange('notifications', 'sendSMSNotifications', !settings.notifications.sendSMSNotifications)}
                           className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
-                            settings.notifications?.sendSMSNotifications ? 'bg-blue-600' : 'bg-gray-200'
+                            settings.notifications.sendSMSNotifications ? 'bg-blue-600' : 'bg-gray-200'
                           }`}
                         >
                           <span
                             className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                              settings.notifications?.sendSMSNotifications ? 'translate-x-5' : 'translate-x-0'
+                              settings.notifications.sendSMSNotifications ? 'translate-x-5' : 'translate-x-0'
                             }`}
                           />
                         </button>
@@ -567,14 +572,14 @@ export default function SettingsPage() {
                           <p className="text-xs text-gray-500">Automatically send weekly reports</p>
                         </div>
                         <button
-                          onClick={() => handleSettingChange('notifications', 'autoSendReports', !settings.notifications?.autoSendReports)}
+                          onClick={() => handleSettingChange('notifications', 'autoSendReports', !settings.notifications.autoSendReports)}
                           className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
-                            settings.notifications?.autoSendReports ? 'bg-blue-600' : 'bg-gray-200'
+                            settings.notifications.autoSendReports ? 'bg-blue-600' : 'bg-gray-200'
                           }`}
                         >
                           <span
                             className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                              settings.notifications?.autoSendReports ? 'translate-x-5' : 'translate-x-0'
+                              settings.notifications.autoSendReports ? 'translate-x-5' : 'translate-x-0'
                             }`}
                           />
                         </button>
@@ -597,7 +602,7 @@ export default function SettingsPage() {
                           type="number"
                           min="5"
                           max="480"
-                          value={settings.security?.sessionTimeout || 60}
+                          value={settings.security.sessionTimeout}
                           onChange={(e) => handleSettingChange('security', 'sessionTimeout', parseInt(e.target.value))}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
@@ -612,7 +617,7 @@ export default function SettingsPage() {
                           type="number"
                           min="1"
                           max="365"
-                          value={settings.security?.passwordExpiryDays || 90}
+                          value={settings.security.passwordExpiryDays}
                           onChange={(e) => handleSettingChange('security', 'passwordExpiryDays', parseInt(e.target.value))}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
@@ -627,7 +632,7 @@ export default function SettingsPage() {
                           type="number"
                           min="1"
                           max="10"
-                          value={settings.security?.maxLoginAttempts || 5}
+                          value={settings.security.maxLoginAttempts}
                           onChange={(e) => handleSettingChange('security', 'maxLoginAttempts', parseInt(e.target.value))}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
@@ -641,14 +646,14 @@ export default function SettingsPage() {
                         <p className="text-xs text-gray-500">Require password for sensitive actions</p>
                       </div>
                       <button
-                        onClick={() => handleSettingChange('security', 'requireReauthentication', !settings.security?.requireReauthentication)}
+                        onClick={() => handleSettingChange('security', 'requireReauthentication', !settings.security.requireReauthentication)}
                         className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
-                          settings.security?.requireReauthentication ? 'bg-blue-600' : 'bg-gray-200'
+                          settings.security.requireReauthentication ? 'bg-blue-600' : 'bg-gray-200'
                         }`}
                       >
                         <span
                           className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                            settings.security?.requireReauthentication ? 'translate-x-5' : 'translate-x-0'
+                            settings.security.requireReauthentication ? 'translate-x-5' : 'translate-x-0'
                           }`}
                         />
                       </button>

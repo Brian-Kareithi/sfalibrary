@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/context/authcontext';
 import { libraryApi } from '@/lib/api';
 import { Loan, LoanFilters } from './components/loan';
@@ -9,9 +9,11 @@ import BorrowBookModal from './components/BorrowBookModal';
 import ReturnBookModal from './components/ReturnBookModal';
 import { toast } from 'react-hot-toast';
 
+type ActiveTab = 'all' | 'active' | 'overdue';
+
 export default function LoansPage() {
-  const { user, hasRole } = useAuth();
-  const [activeTab, setActiveTab] = useState<'all' | 'active' | 'overdue'>('all');
+  const { hasRole } = useAuth();
+  const [activeTab, setActiveTab] = useState<ActiveTab>('all');
   const [loans, setLoans] = useState<Loan[]>([]);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState<LoanFilters>({
@@ -28,11 +30,7 @@ export default function LoansPage() {
   const [isReturnModalOpen, setIsReturnModalOpen] = useState(false);
   const [selectedLoan, setSelectedLoan] = useState<Loan | null>(null);
 
-  useEffect(() => {
-    loadLoans();
-  }, [activeTab, filters]);
-
-  const loadLoans = async () => {
+  const loadLoans = useCallback(async () => {
     try {
       setLoading(true);
       let response;
@@ -61,7 +59,11 @@ export default function LoansPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [activeTab, filters]);
+
+  useEffect(() => {
+    loadLoans();
+  }, [loadLoans]);
 
   const handleBorrowSuccess = () => {
     setIsBorrowModalOpen(false);
@@ -90,8 +92,9 @@ export default function LoansPage() {
       if (response.success) {
         handleRenewSuccess();
       }
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to renew loan');
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to renew loan';
+      toast.error(errorMessage);
     }
   };
 
@@ -110,7 +113,7 @@ export default function LoansPage() {
               </svg>
             </div>
             <h2 className="text-xl font-bold text-red-700 mb-2">Access Denied</h2>
-            <p className="text-gray-600">You don't have permission to access loan management.</p>
+            <p className="text-gray-600">You don&apos;t have permission to access loan management.</p>
           </div>
         </div>
       </div>
@@ -159,7 +162,7 @@ export default function LoansPage() {
               ].map((tab) => (
                 <button
                   key={tab.key}
-                  onClick={() => setActiveTab(tab.key as any)}
+                  onClick={() => setActiveTab(tab.key as ActiveTab)}
                   className={`px-6 py-3 rounded-xl font-medium text-sm transition-all duration-200 ${
                     activeTab === tab.key
                       ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-md'

@@ -45,6 +45,7 @@ export interface Book {
   barcode?: string;
   isActive: boolean;
   createdAt: string;
+  updatedAt: string;
   creator?: {
     name: string;
     email?: string;
@@ -142,6 +143,8 @@ export interface LibraryStats {
 
 export interface PaginatedResponse<T> {
   data: T[];
+  books?: T[];
+  items?: T[];
   pagination: {
     page: number;
     limit: number;
@@ -237,14 +240,28 @@ export interface ClassResponse {
   currentEnrollment: number;
   isActive: boolean;
   createdAt: string;
+  streams?: Array<{ id: string; name: string }>;
+}
+
+export interface ClassOption {
+  value: string;
+  label: string;
+  streams?: Array<{ id: string; name: string }>;
 }
 
 export interface GetClassesResponse {
   classes: ClassResponse[];
   total: number;
+  data?: {
+    classes?: ClassResponse[];
+    dropdown?: ClassOption[];
+  };
+  dropdown?: ClassOption[];
+  getClassesResponse?: {
+    classes?: ClassResponse[];
+  };
 }
 
-// New interfaces for dashboard and settings
 export interface RecentActivity {
   id: string;
   action: string;
@@ -289,6 +306,46 @@ export interface LibrarySettings {
   notifyOnOverdue: boolean;
 }
 
+export interface CreateBookRequest {
+  isbn?: string;
+  title?: string;
+  author?: string;
+  publisher?: string;
+  category?: string;
+  format?: 'PHYSICAL' | 'DIGITAL';
+  totalCopies?: number;
+  location?: string;
+  publicationYear?: number;
+  edition?: string;
+  language?: string;
+  pages?: number;
+  deweyDecimal?: string;
+  maxBorrowDays?: number;
+  maxRenewals?: number;
+  isReservable?: boolean;
+  dailyFineAmount?: number;
+  maxFineAmount?: number;
+  description?: string;
+  coverImageUrl?: string;
+  barcode?: string;
+}
+
+export interface BookFilters {
+  page?: number;
+  limit?: number;
+  category?: string;
+  format?: string;
+  author?: string;
+  isbn?: string;
+  barcode?: string;
+  location?: string;
+  publicationYear?: number;
+  available?: boolean;
+  search?: string;
+  sortBy?: string;
+  sortOrder?: string;
+}
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://steadfast-system-copy-production.up.railway.app/api';
 
 class LibraryApiClient {
@@ -324,7 +381,6 @@ class LibraryApiClient {
       'Content-Type': 'application/json',
     };
 
-    // Always check for fresh token
     if (typeof window !== 'undefined') {
       const currentToken = localStorage.getItem('token');
       if (currentToken && currentToken !== this.token) {
@@ -345,7 +401,6 @@ class LibraryApiClient {
   ): Promise<ApiResponse<T>> {
     const url = `${API_URL}${endpoint}`;
     
-    // Always get fresh headers to ensure token is current
     const baseHeaders = this.getAuthHeaders();
     const headers = {
       ...baseHeaders,
@@ -353,18 +408,11 @@ class LibraryApiClient {
     };
 
     try {
-      console.log(`Making API request to: ${url}`, {
-        method: options.method,
-        headers,
-        body: options.body ? JSON.parse(options.body as string) : undefined
-      });
-
       const response = await fetch(url, {
         ...options,
         headers,
       });
 
-      // Handle HTTP errors first
       if (!response.ok) {
         const errorText = await response.text();
         console.error(`HTTP Error ${response.status}:`, errorText);
@@ -385,7 +433,6 @@ class LibraryApiClient {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      // Check if response is JSON
       const contentType = response.headers.get('content-type');
       if (!contentType || !contentType.includes('application/json')) {
         const textResponse = await response.text();
@@ -397,7 +444,6 @@ class LibraryApiClient {
       }
 
       const data = await response.json();
-      console.log('API response:', data);
 
       if (data.success === false) {
         throw new Error(data.message || 'API request failed');
@@ -409,7 +455,6 @@ class LibraryApiClient {
       console.error('API Request Error:', error);
       const errorMessage = error instanceof Error ? error.message : 'An error occurred';
       
-      // Only show toast for non-authentication errors
       if (!errorMessage.includes('Authentication required') && !errorMessage.includes('401')) {
         toast.error(errorMessage);
       }
@@ -467,22 +512,8 @@ class LibraryApiClient {
     });
   }
 
-  // 📚 Book Management
-  async getBooks(params?: {
-    page?: number;
-    limit?: number;
-    category?: string;
-    format?: string;
-    author?: string;
-    isbn?: string;
-    barcode?: string;
-    location?: string;
-    publicationYear?: number;
-    available?: boolean;
-    search?: string;
-    sortBy?: string;
-    sortOrder?: string;
-  }): Promise<ApiResponse<PaginatedResponse<Book>>> {
+  // Book Management
+  async getBooks(params?: BookFilters): Promise<ApiResponse<PaginatedResponse<Book>>> {
     const query = new URLSearchParams();
     if (params) {
       Object.entries(params).forEach(([key, value]) => {
@@ -500,29 +531,7 @@ class LibraryApiClient {
     return this.request<Book>(`/library/books/${bookId}`);
   }
 
-  async createBook(bookData: {
-    isbn: string;
-    title: string;
-    author: string;
-    publisher?: string;
-    category: string;
-    format: 'PHYSICAL' | 'DIGITAL';
-    totalCopies: number;
-    location?: string;
-    publicationYear?: number;
-    edition?: string;
-    language?: string;
-    pages?: number;
-    deweyDecimal?: string;
-    maxBorrowDays?: number;
-    maxRenewals?: number;
-    isReservable?: boolean;
-    dailyFineAmount?: number;
-    maxFineAmount?: number;
-    description?: string;
-    coverImageUrl?: string;
-    barcode?: string;
-  }): Promise<ApiResponse<Book>> {
+  async createBook(bookData: CreateBookRequest): Promise<ApiResponse<Book>> {
     return this.request<Book>('/library/books', {
       method: 'POST',
       body: JSON.stringify(bookData),
@@ -565,9 +574,7 @@ class LibraryApiClient {
     });
   }
 
-  // 🔄 Loan Management
-
-  // Issue a book - CORRECTED: bookId is included in the request body
+  // Loan Management
   async issueBook(bookId: string, borrowRequest: BorrowRequest): Promise<ApiResponse<Loan>> {
     const payload = {
       bookId,
@@ -580,7 +587,6 @@ class LibraryApiClient {
     });
   }
 
-  // Alternative borrow method using the book ID in URL
   async borrowBook(bookId: string, borrowRequest: BorrowRequest): Promise<ApiResponse<Loan>> {
     return this.request<Loan>(`/library/books/${bookId}/borrow`, {
       method: 'POST',
@@ -588,7 +594,6 @@ class LibraryApiClient {
     });
   }
 
-  // Return a book
   async returnBook(loanId: string, returnRequest: ReturnRequest): Promise<ApiResponse<Loan>> {
     return this.request<Loan>(`/library/loans/${loanId}/return`, {
       method: 'PUT',
@@ -596,7 +601,6 @@ class LibraryApiClient {
     });
   }
 
-  // Renew a loan
   async renewLoan(loanId: string, newDueDate?: string): Promise<ApiResponse<Loan>> {
     const body = newDueDate ? { newDueDate } : {};
     return this.request<Loan>(`/library/loans/${loanId}/renew`, {
@@ -605,7 +609,6 @@ class LibraryApiClient {
     });
   }
 
-  // Get all loans - REMOVED DUPLICATE METHOD
   async getLoans(params?: LoanFilters): Promise<ApiResponse<PaginatedResponse<Loan>>> {
     const query = new URLSearchParams();
     if (params) {
@@ -620,7 +623,6 @@ class LibraryApiClient {
     return this.request<PaginatedResponse<Loan>>(`/library/loans?${queryString}`);
   }
 
-  // Get active loans
   async getActiveLoans(params?: LoanFilters): Promise<ApiResponse<PaginatedResponse<Loan>>> {
     const query = new URLSearchParams();
     if (params) {
@@ -635,12 +637,10 @@ class LibraryApiClient {
     return this.request<PaginatedResponse<Loan>>(`/library/loans/active?${queryString}`);
   }
 
-  // Get overdue loans
   async getOverdueLoans(): Promise<ApiResponse<Loan[]>> {
     return this.request<Loan[]>('/library/loans/overdue');
   }
 
-  // Update fine for a loan
   async updateFine(loanId: string, fineUpdate: FineUpdateRequest): Promise<ApiResponse<Loan>> {
     return this.request<Loan>(`/library/loans/${loanId}/fine`, {
       method: 'PUT',
@@ -648,7 +648,7 @@ class LibraryApiClient {
     });
   }
 
-  // 👤 User Management
+  // User Management
   async getUserBorrowingStatus(userId: string): Promise<ApiResponse<UserBorrowingStatus>> {
     return this.request<UserBorrowingStatus>(`/library/users/${userId}/borrowing-status`);
   }
@@ -679,7 +679,7 @@ class LibraryApiClient {
     return this.request<UserFines>(`/library/users/${userId}/fines`);
   }
 
-  // 🔍 Search & Discovery
+  // Search & Discovery
   async searchBooks(query: string, filters?: {
     category?: string;
     format?: string;
@@ -716,7 +716,7 @@ class LibraryApiClient {
     return this.request<string[]>('/library/authors');
   }
 
-  // Get library dashboard data
+  // Dashboard
   async getDashboard(): Promise<ApiResponse<DashboardData>> {
     return this.request<DashboardData>('/library/dashboard');
   }
@@ -743,7 +743,7 @@ class LibraryApiClient {
     return this.request<UsageReport>(`/library/usage-report?${queryString}`);
   }
 
-  // ⚙️ Settings
+  // Settings
   async getSettings(): Promise<ApiResponse<LibrarySettings>> {
     return this.request<LibrarySettings>('/library/settings');
   }
@@ -755,13 +755,12 @@ class LibraryApiClient {
     });
   }
 
-  // File Upload (for book covers)
+  // File Upload
   async uploadBookCover(bookId: string, file: File): Promise<ApiResponse<{ imageUrl: string }>> {
     const formData = new FormData();
     formData.append('cover', file);
 
     const headers: HeadersInit = { ...this.getAuthHeaders() };
-    // Remove Content-Type for FormData to let browser set it
     delete (headers as Record<string, string>)['Content-Type'];
 
     try {
@@ -791,7 +790,7 @@ class LibraryApiClient {
     return this.request<{ downloadUrl: string }>(`/library/books/export?format=${format}`);
   }
 
-  // 🎓 Academic Management
+  // Academic Management
   async getStudents(params?: { 
     classId?: string; 
     streamId?: string; 

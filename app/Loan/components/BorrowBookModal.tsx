@@ -1,3 +1,4 @@
+'use client';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { libraryApi } from '@/lib/api';
 import { Student } from './loan';
@@ -84,6 +85,39 @@ interface StudentData {
   admissionNumber?: string;
 }
 
+// Extended interfaces for API response handling
+interface ExtendedClassResponse {
+  id: string;
+  name: string;
+  level: string;
+  stream?: string;
+  capacity: number;
+  currentEnrollment: number;
+  isActive: boolean;
+  createdAt: string;
+  streams?: Array<{ id: string; name: string }>;
+}
+
+interface ExtendedGetClassesResponse {
+  classes: ExtendedClassResponse[];
+  total: number;
+  data?: {
+    classes?: ExtendedClassResponse[];
+    dropdown?: ClassOption[];
+  };
+  dropdown?: ClassOption[];
+  getClassesResponse?: {
+    classes?: ExtendedClassResponse[];
+  };
+}
+
+interface ExtendedStudentsResponse {
+  students?: StudentData[];
+  data?: {
+    students?: StudentData[];
+  };
+}
+
 export default function LoanBookModal({ isOpen, onClose, onSuccess }: LoanBookModalProps) {
   const [step, setStep] = useState<'search' | 'confirm'>('search');
   const [bookSearch, setBookSearch] = useState('');
@@ -128,12 +162,20 @@ export default function LoanBookModal({ isOpen, onClose, onSuccess }: LoanBookMo
       });
       
       if (response.success) {
-        const bookData = response.data?.data || response.data;
-        if (Array.isArray(bookData)) {
-          setBooks(bookData);
-        } else {
-          setBooks([]);
+        const responseData = response.data;
+        let bookData: Book[] = [];
+        
+        if (Array.isArray(responseData)) {
+          bookData = responseData;
+        } else if (Array.isArray(responseData?.data)) {
+          bookData = responseData.data;
+        } else if (Array.isArray(responseData?.books)) {
+          bookData = responseData.books;
+        } else if (Array.isArray(responseData?.items)) {
+          bookData = responseData.items;
         }
+        
+        setBooks(bookData);
       } else {
         setBooks([]);
       }
@@ -168,30 +210,31 @@ export default function LoanBookModal({ isOpen, onClose, onSuccess }: LoanBookMo
         
         if (res.success) {
           let classOptions: ClassOption[] = [];
+          const responseData = res.data as ExtendedGetClassesResponse;
           
-          // Handle different response formats
-          if (Array.isArray(res.data?.dropdown)) {
-            classOptions = res.data.dropdown;
-          } else if (Array.isArray(res.data?.getClassesResponse?.classes)) {
-            classOptions = res.data.getClassesResponse.classes.map((cls: { id: string; name: string; streams?: Array<{ id: string; name: string }> }) => ({
+          // Handle all possible response formats safely
+          if (Array.isArray(responseData?.dropdown)) {
+            classOptions = responseData.dropdown;
+          } else if (Array.isArray(responseData?.classes)) {
+            classOptions = responseData.classes.map((cls: ExtendedClassResponse) => ({
               value: cls.id,
               label: cls.name,
               streams: cls.streams || []
             }));
-          } else if (Array.isArray(res.data?.classes)) {
-            classOptions = res.data.classes.map((cls: { id: string; name: string; streams?: Array<{ id: string; name: string }> }) => ({
+          } else if (Array.isArray(responseData?.data?.classes)) {
+            classOptions = responseData.data.classes.map((cls: ExtendedClassResponse) => ({
               value: cls.id,
               label: cls.name,
               streams: cls.streams || []
             }));
-          } else if (Array.isArray(res.data?.data?.classes)) {
-            classOptions = res.data.data.classes.map((cls: { id: string; name: string; streams?: Array<{ id: string; name: string }> }) => ({
+          } else if (Array.isArray(responseData?.getClassesResponse?.classes)) {
+            classOptions = responseData.getClassesResponse!.classes!.map((cls: ExtendedClassResponse) => ({
               value: cls.id,
               label: cls.name,
               streams: cls.streams || []
             }));
           } else {
-            console.warn('Unexpected classes response format:', res.data);
+            console.warn('Unexpected classes response format:', responseData);
             setError("Failed to load classes - unexpected data format");
             return;
           }
@@ -225,16 +268,17 @@ export default function LoanBookModal({ isOpen, onClose, onSuccess }: LoanBookMo
       });
       
       let studentList: StudentData[] = [];
+      const responseData = res.data as StudentData[] | ExtendedStudentsResponse;
       
       // Handle different response formats
-      if (Array.isArray(res.data)) {
-        studentList = res.data as StudentData[];
-      } else if (Array.isArray(res.data?.students)) {
-        studentList = res.data.students as StudentData[];
-      } else if (Array.isArray(res.data?.data?.students)) {
-        studentList = res.data.data.students as StudentData[];
+      if (Array.isArray(responseData)) {
+        studentList = responseData as StudentData[];
+      } else if (Array.isArray((responseData as ExtendedStudentsResponse)?.students)) {
+        studentList = (responseData as ExtendedStudentsResponse).students!;
+      } else if (Array.isArray((responseData as ExtendedStudentsResponse)?.data?.students)) {
+        studentList = (responseData as ExtendedStudentsResponse).data!.students!;
       } else {
-        console.warn('Unexpected students response format:', res.data);
+        console.warn('Unexpected students response format:', responseData);
         setError("Failed to load students - unexpected data format");
         setStudents([]);
         return;
@@ -358,13 +402,6 @@ export default function LoanBookModal({ isOpen, onClose, onSuccess }: LoanBookMo
       // Try to issue each book sequentially
       for (const book of selectedBooks) {
         try {
-          console.log('Issuing book:', {
-            bookId: book.id,
-            borrowerId: selectedStudent.id,
-            dueDate: dueDate || undefined,
-            notes: notes || undefined
-          });
-
           // Try issueBook first (new endpoint)
           const response = await libraryApi.issueBook(book.id, {
             borrowerId: selectedStudent.id,
@@ -374,7 +411,6 @@ export default function LoanBookModal({ isOpen, onClose, onSuccess }: LoanBookMo
 
           if (response.success) {
             successfulLoans++;
-            console.log(`Successfully issued book: ${book.title}`);
           } else {
             failedLoans.push(`${book.title}: ${response.message}`);
           }
@@ -383,7 +419,6 @@ export default function LoanBookModal({ isOpen, onClose, onSuccess }: LoanBookMo
           
           // If issueBook fails, try borrowBook as fallback
           try {
-            console.log('Trying borrowBook as fallback for:', book.title);
             const fallbackResponse = await libraryApi.borrowBook(book.id, {
               borrowerId: selectedStudent.id,
               dueDate: dueDate || undefined,
@@ -392,11 +427,10 @@ export default function LoanBookModal({ isOpen, onClose, onSuccess }: LoanBookMo
 
             if (fallbackResponse.success) {
               successfulLoans++;
-              console.log(`Successfully borrowed book (fallback): ${book.title}`);
             } else {
               failedLoans.push(`${book.title}: ${fallbackResponse.message || 'Unknown error'}`);
             }
-          } catch (fallbackError: unknown) {
+          } catch {
             failedLoans.push(`${book.title}: Failed to issue book`);
           }
         }
@@ -454,7 +488,7 @@ export default function LoanBookModal({ isOpen, onClose, onSuccess }: LoanBookMo
     const matchesStream = !selectedStream || student.currentStreamId === selectedStream;
     const matchesSearch = !studentSearch || 
       student.name.toLowerCase().includes(studentSearch.toLowerCase()) ||
-      student.studentProfile?.admissionNumber?.toLowerCase().includes(studentSearch.toLowerCase()) ||
+      (student.studentProfile?.admissionNumber?.toLowerCase().includes(studentSearch.toLowerCase()) ?? false) ||
       student.email.toLowerCase().includes(studentSearch.toLowerCase());
 
     return matchesClass && matchesStream && matchesSearch;
@@ -572,8 +606,6 @@ export default function LoanBookModal({ isOpen, onClose, onSuccess }: LoanBookMo
                                   width={48}
                                   height={64}
                                   className="w-12 h-16 object-cover rounded-lg"
-                                  placeholder="blur"
-                                  blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R"
                                 />
                               </div>
                             ) : (
@@ -647,8 +679,6 @@ export default function LoanBookModal({ isOpen, onClose, onSuccess }: LoanBookMo
                                   width={32}
                                   height={40}
                                   className="w-8 h-10 object-cover rounded"
-                                  placeholder="blur"
-                                  blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R"
                                 />
                               </div>
                             ) : (
@@ -948,8 +978,6 @@ export default function LoanBookModal({ isOpen, onClose, onSuccess }: LoanBookMo
                                 width={32}
                                 height={40}
                                 className="w-8 h-10 object-cover rounded"
-                                placeholder="blur"
-                                blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R"
                               />
                             </div>
                           ) : (
@@ -1069,5 +1097,4 @@ export default function LoanBookModal({ isOpen, onClose, onSuccess }: LoanBookMo
       </div>
     </div>
   );
-}./app/Loan/components/BorrowBookModal.tsx
-399:20  Warning: 'fallbackError' is defined but never used.  @typescript-eslint/no-unused-vars
+}
