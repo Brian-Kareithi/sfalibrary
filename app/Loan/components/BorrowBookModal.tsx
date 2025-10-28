@@ -147,6 +147,7 @@ export default function LoanBookModal({ isOpen, onClose, onSuccess }: LoanBookMo
     setDueDate(defaultDueDate.toISOString().split('T')[0]);
   }, []);
 
+  // Fixed book search function
   const searchBooks = useCallback(async () => {
     if (bookSearch.length <= 2) {
       setBooks([]);
@@ -165,14 +166,15 @@ export default function LoanBookModal({ isOpen, onClose, onSuccess }: LoanBookMo
         const responseData = response.data;
         let bookData: Book[] = [];
         
+        // Handle different response formats safely
         if (Array.isArray(responseData)) {
           bookData = responseData;
-        } else if (Array.isArray(responseData?.data)) {
-          bookData = responseData.data;
-        } else if (Array.isArray(responseData?.books)) {
-          bookData = responseData.books;
-        } else if (Array.isArray(responseData?.items)) {
-          bookData = responseData.items;
+        } else if (responseData && typeof responseData === 'object' && 'data' in responseData) {
+          // Handle PaginatedResponse<Book> structure
+          const paginatedData = responseData as { data: Book[] };
+          if (Array.isArray(paginatedData.data)) {
+            bookData = paginatedData.data;
+          }
         }
         
         setBooks(bookData);

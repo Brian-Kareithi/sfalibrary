@@ -1,5 +1,8 @@
+// Core Loan and related types
 export interface Loan {
   id: string;
+  bookId: string;
+  borrowerId: string;
   borrowDate: string;
   dueDate: string;
   returnDate: string | null;
@@ -8,7 +11,7 @@ export interface Loan {
   fineAmount: number;
   finePaidAmount: number;
   fineWaivedAmount: number;
-  condition?: string;
+  condition?: 'EXCELLENT' | 'GOOD' | 'FAIR' | 'POOR' | 'DAMAGED';
   notes?: string;
   borrower: {
     id: string;
@@ -290,4 +293,202 @@ export interface ApiResponse<T> {
     total: number;
     totalPages: number;
   };
+}
+
+// Additional loan-related types specific to components
+export interface LoanTableProps {
+  loans: Loan[];
+  loading: boolean;
+  onReturnClick: (loan: Loan) => void;
+  onRenewClick: (loan: Loan) => void;
+  activeTab: 'all' | 'active' | 'overdue';
+}
+
+export interface LoanStatsProps {
+  loans: Loan[];
+  activeTab: 'all' | 'active' | 'overdue';
+}
+
+export interface BorrowBookModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSuccess: () => void;
+}
+
+export interface ReturnBookModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSuccess: () => void;
+  loan: Loan | null;
+}
+
+// Extended interfaces for additional functionality
+export interface LoanWithDetails extends Loan {
+  isOverdue?: boolean;
+  daysOverdue?: number;
+}
+
+export interface LoanSummary {
+  total: number;
+  active: number;
+  overdue: number;
+  returned: number;
+}
+
+// Book related types
+export interface Book {
+  id: string;
+  isbn: string;
+  title: string;
+  author: string;
+  publisher: string;
+  category: string;
+  format: 'PHYSICAL' | 'DIGITAL';
+  totalCopies: number;
+  availableCopies: number;
+  borrowedCopies: number;
+  reservedCopies: number;
+  location: string;
+  publicationYear: number;
+  edition: string;
+  language: string;
+  pages: number;
+  deweyDecimal?: string;
+  maxBorrowDays: number;
+  maxRenewals: number;
+  isReservable: boolean;
+  dailyFineAmount: number;
+  maxFineAmount: number;
+  coverImageUrl: string;
+  description: string;
+  barcode?: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+  creator?: {
+    name: string;
+    email?: string;
+  };
+}
+
+export interface BookFilters {
+  page?: number;
+  limit?: number;
+  category?: string;
+  format?: string;
+  author?: string;
+  isbn?: string;
+  barcode?: string;
+  location?: string;
+  publicationYear?: number;
+  available?: boolean;
+  search?: string;
+  sortBy?: string;
+  sortOrder?: string;
+}
+
+export interface CreateBookRequest {
+  isbn?: string;
+  title?: string;
+  author?: string;
+  publisher?: string;
+  category?: string;
+  format?: 'PHYSICAL' | 'DIGITAL';
+  totalCopies?: number;
+  location?: string;
+  publicationYear?: number;
+  edition?: string;
+  language?: string;
+  pages?: number;
+  deweyDecimal?: string;
+  maxBorrowDays?: number;
+  maxRenewals?: number;
+  isReservable?: boolean;
+  dailyFineAmount?: number;
+  maxFineAmount?: number;
+  description?: string;
+  coverImageUrl?: string;
+  barcode?: string;
+}
+
+// User related types
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  phone: string | null;
+  address: string | null;
+  dateOfBirth: string | null;
+  gender: string | null;
+  role: 'ADMIN' | 'STUDENT' | 'TEACHER' | 'LIBRARIAN' | 'STAFF';
+  status: 'ACTIVE' | 'INACTIVE';
+  registrationNumber: string;
+  profileCompleted: boolean;
+  lastLoginAt: string;
+  createdAt: string;
+}
+
+export interface AuthResponse {
+  message: string;
+  success: boolean;
+  token: string;
+  user: User;
+}
+
+// Library management types
+export interface LibraryStats {
+  totalBooks: number;
+  totalCopies: number;
+  availableCopies: number;
+  borrowedCopies: number;
+  totalMembers?: number;
+  activeBorrows?: number;
+  overdueBooks?: number;
+  totalGenres?: number;
+}
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
+export interface BulkImportResult {
+  successful: number;
+  failed: number;
+  errors: string[];
+}
+
+export interface CopyUpdateRequest {
+  totalCopies: number;
+  operation: 'add' | 'subtract' | 'set';
+}
+
+export interface FineUpdateRequest {
+  fineAmount?: number;
+  paidAmount?: number;
+  waivedAmount?: number;
+  notes?: string;
+}
+
+export interface FineDetail {
+  id: string;
+  fineAmount: number;
+  finePaidAmount: number;
+  fineWaivedAmount: number;
+  returnDate: string;
+  book: {
+    title: string;
+    author: string;
+  };
+}
+
+export interface UserFines {
+  totalFineAmount: number;
+  calculatedFineAmount: number;
+  fineDetails: FineDetail[];
 }

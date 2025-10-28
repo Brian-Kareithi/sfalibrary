@@ -1,30 +1,8 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { libraryApi } from '@/lib/api';
-import { Book, Loan } from '@/lib/api';
+import { libraryApi, DashboardData } from '@/lib/api';
+import { Book, Loan } from './Loan/components/loan';
 import Link from 'next/link';
-
-interface DashboardData {
-  overview: {
-    totalBooks: number;
-    totalCopies: number;
-    availableCopies: number;
-    borrowedCopies: number;
-    activeLoans: number;
-    overdueLoans: number;
-    totalFines: number;
-  };
-  categoryStats: Array<{
-    _count: number;
-    _sum: {
-      totalCopies: number;
-      availableCopies: number;
-    };
-    category: string;
-  }>;
-  recentLoans: Loan[];
-  popularBooks: Book[];
-}
 
 export default function Dashboard() {
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
@@ -47,6 +25,22 @@ export default function Dashboard() {
       const dashboardResponse = await libraryApi.getDashboard();
       if (dashboardResponse.success) {
         setDashboardData(dashboardResponse.data);
+      } else {
+        // If dashboard endpoint fails, create fallback data
+        setDashboardData({
+          overview: {
+            totalBooks: 0,
+            totalCopies: 0,
+            availableCopies: 0,
+            borrowedCopies: 0,
+            activeLoans: 0,
+            overdueLoans: 0,
+            totalFines: 0
+          },
+          categoryStats: [],
+          recentLoans: [],
+          popularBooks: []
+        });
       }
 
       // Load recent books
@@ -56,7 +50,7 @@ export default function Dashboard() {
         sortOrder: 'desc' 
       });
       if (booksResponse.success) {
-        setRecentBooks(booksResponse.data || []);
+        setRecentBooks(booksResponse.data.data || []);
       }
 
       // Load user's current loans - with proper error handling
@@ -79,6 +73,21 @@ export default function Dashboard() {
     } catch (error) {
       console.error('Failed to load dashboard data:', error);
       setError('Failed to load dashboard data');
+      // Set fallback data on error
+      setDashboardData({
+        overview: {
+          totalBooks: 0,
+          totalCopies: 0,
+          availableCopies: 0,
+          borrowedCopies: 0,
+          activeLoans: 0,
+          overdueLoans: 0,
+          totalFines: 0
+        },
+        categoryStats: [],
+        recentLoans: [],
+        popularBooks: []
+      });
     } finally {
       setLoading(false);
     }
@@ -126,7 +135,7 @@ export default function Dashboard() {
     );
   }
 
-  if (error) {
+  if (error && !dashboardData) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -474,7 +483,7 @@ export default function Dashboard() {
                           </span>
                         </div>
                         <div className="flex justify-between text-xs text-gray-500 mt-2">
-                          <span>Borrowed {book.borrowCount || 0} times</span>
+                          <span>Borrowed {book._count?.loans || 0} times</span>
                           <span>{book.category}</span>
                         </div>
                       </div>

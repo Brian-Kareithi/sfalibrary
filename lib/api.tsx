@@ -1,6 +1,6 @@
 import { toast } from 'react-hot-toast';
 
-// Interfaces
+// Core Interfaces
 export interface User {
   id: string;
   name: string;
@@ -70,10 +70,12 @@ export interface Loan {
   fineWaivedAmount: number;
   condition?: 'EXCELLENT' | 'GOOD' | 'FAIR' | 'POOR' | 'DAMAGED';
   notes?: string;
-  borrower?: {
+  borrower: {
+    id: string;
     name: string;
     email: string;
     role: string;
+    phone?: string;
     studentProfile?: {
       admissionNumber: string;
       parentContacts?: Array<{
@@ -83,21 +85,24 @@ export interface Loan {
       }>;
     };
   };
-  book?: {
+  book: {
+    id: string;
     title: string;
     author: string;
     isbn: string;
-    format: string;
-    dailyFineAmount?: number;
+    format: 'PHYSICAL' | 'DIGITAL';
     coverImageUrl?: string;
-    fileUrl?: string;
+    dailyFineAmount: number;
+    maxRenewals?: number;
     accessUrl?: string;
   };
   issuedBy?: {
     name: string;
+    email: string;
   };
   returnedBy?: {
     name: string;
+    email: string;
   };
 }
 
@@ -141,17 +146,36 @@ export interface LibraryStats {
   totalGenres?: number;
 }
 
+export interface DashboardData {
+  overview: {
+    totalBooks: number;
+    totalCopies: number;
+    availableCopies: number;
+    borrowedCopies: number;
+    activeLoans: number;
+    overdueLoans: number;
+    totalFines: number;
+  };
+  categoryStats: Array<{
+    _count: number;
+    _sum: {
+      totalCopies: number;
+      availableCopies: number;
+    };
+    category: string;
+  }>;
+  recentLoans: Loan[];
+  popularBooks: Book[];
+}
+
 export interface PaginatedResponse<T> {
   data: T[];
-  books?: T[];
-  items?: T[];
   pagination: {
     page: number;
     limit: number;
     total: number;
     totalPages: number;
   };
-  summary?: LibraryStats;
 }
 
 export interface ApiResponse<T> {
@@ -164,7 +188,6 @@ export interface ApiResponse<T> {
     total: number;
     totalPages: number;
   };
-  summary?: LibraryStats;
 }
 
 export interface AuthResponse {
@@ -277,13 +300,6 @@ export interface RecentActivity {
   };
 }
 
-export interface DashboardData {
-  stats: LibraryStats;
-  recentActivity: RecentActivity[];
-  popularBooks: Book[];
-  overdueBooks: Loan[];
-}
-
 export interface UsageReport {
   period: string;
   totalBorrows: number;
@@ -293,17 +309,38 @@ export interface UsageReport {
   activeUsers: User[];
 }
 
+// Updated LibrarySettings interface to match the settings page
 export interface LibrarySettings {
-  maxBooksPerUser: number;
-  maxBorrowDays: number;
-  maxRenewals: number;
-  dailyFineAmount: number;
-  maxFineAmount: number;
-  reservationDuration: number;
-  allowDigitalBorrows: boolean;
-  allowPhysicalBorrows: boolean;
-  autoCalculateFines: boolean;
-  notifyOnOverdue: boolean;
+  general: {
+    libraryName: string;
+    libraryEmail: string;
+    libraryPhone: string;
+    libraryAddress: string;
+    openingHours: string;
+    maxBorrowLimit: number;
+    reservationExpiryDays: number;
+  };
+  borrowing: {
+    defaultLoanPeriod: number;
+    maxRenewals: number;
+    renewalExtensionDays: number;
+    dailyFineAmount: number;
+    maxFineAmount: number;
+    gracePeriodDays: number;
+  };
+  notifications: {
+    dueSoonReminderDays: number;
+    overdueReminderInterval: number;
+    sendEmailNotifications: boolean;
+    sendSMSNotifications: boolean;
+    autoSendReports: boolean;
+  };
+  security: {
+    sessionTimeout: number;
+    requireReauthentication: boolean;
+    passwordExpiryDays: number;
+    maxLoginAttempts: number;
+  };
 }
 
 export interface CreateBookRequest {
@@ -381,18 +418,24 @@ class LibraryApiClient {
       'Content-Type': 'application/json',
     };
 
-    if (typeof window !== 'undefined') {
-      const currentToken = localStorage.getItem('token');
-      if (currentToken && currentToken !== this.token) {
-        this.token = currentToken;
-      }
-    }
-
     if (this.token) {
       headers['Authorization'] = `Bearer ${this.token}`;
     }
 
     return headers;
+  }
+
+  private buildQueryString(params?: Record<string, any>): string {
+    if (!params) return '';
+    
+    const query = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        query.append(key, value.toString());
+      }
+    });
+
+    return query.toString();
   }
 
   private async request<T>(
@@ -414,9 +457,6 @@ class LibraryApiClient {
       });
 
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error(`HTTP Error ${response.status}:`, errorText);
-        
         if (response.status === 401) {
           this.clearToken();
           throw new Error('Authentication required. Please log in again.');
@@ -427,35 +467,17 @@ class LibraryApiClient {
         if (response.status === 404) {
           throw new Error('Resource not found.');
         }
-        if (response.status === 400) {
-          throw new Error(`Bad request: ${errorText || 'Invalid request format'}`);
-        }
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        const textResponse = await response.text();
-        return {
-          success: true,
-          message: 'Request completed successfully',
-          data: textResponse as unknown as T
-        };
-      }
-
       const data = await response.json();
-
-      if (data.success === false) {
-        throw new Error(data.message || 'API request failed');
-      }
-
       return data;
 
     } catch (error) {
       console.error('API Request Error:', error);
       const errorMessage = error instanceof Error ? error.message : 'An error occurred';
       
-      if (!errorMessage.includes('Authentication required') && !errorMessage.includes('401')) {
+      if (!errorMessage.includes('Authentication required')) {
         toast.error(errorMessage);
       }
       
@@ -475,8 +497,7 @@ class LibraryApiClient {
       });
 
       if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Login failed: ${errorText}`);
+        throw new Error(`Login failed with status: ${response.status}`);
       }
 
       const result = await response.json();
@@ -500,6 +521,15 @@ class LibraryApiClient {
     }
   }
 
+
+  async logout(): Promise<ApiResponse<{ message: string }>> {
+    const result = await this.request<{ message: string }>('/users/logout', {
+      method: 'POST',
+    });
+    this.clearToken();
+    return result;
+  }
+
   // User Management
   async getMe(): Promise<ApiResponse<User>> {
     return this.request<User>('/users/me');
@@ -512,19 +542,44 @@ class LibraryApiClient {
     });
   }
 
+  async getUsers(params?: {
+    page?: number;
+    limit?: number;
+    role?: string;
+    search?: string;
+  }): Promise<ApiResponse<PaginatedResponse<User>>> {
+    const queryString = this.buildQueryString(params);
+    const url = queryString ? `/users?${queryString}` : '/users';
+    return this.request<PaginatedResponse<User>>(url);
+  }
+
+  async getUserById(userId: string): Promise<ApiResponse<User>> {
+    return this.request<User>(`/users/${userId}`);
+  }
+
+  async updateUser(userId: string, updates: Partial<User>): Promise<ApiResponse<User>> {
+    return this.request<User>(`/users/${userId}`, {
+      method: 'PUT',
+      body: JSON.stringify(updates),
+    });
+  }
+
+  async deleteUser(userId: string): Promise<ApiResponse<{ message: string }>> {
+    return this.request<{ message: string }>(`/users/${userId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // Dashboard
+  async getDashboard(): Promise<ApiResponse<DashboardData>> {
+    return this.request<DashboardData>('/library/dashboard');
+  }
+
   // Book Management
   async getBooks(params?: BookFilters): Promise<ApiResponse<PaginatedResponse<Book>>> {
-    const query = new URLSearchParams();
-    if (params) {
-      Object.entries(params).forEach(([key, value]) => {
-        if (value !== undefined && value !== null && value !== '') {
-          query.append(key, value.toString());
-        }
-      });
-    }
-
-    const queryString = query.toString();
-    return this.request<PaginatedResponse<Book>>(`/library/books?${queryString}`);
+    const queryString = this.buildQueryString(params);
+    const url = queryString ? `/library/books?${queryString}` : '/library/books';
+    return this.request<PaginatedResponse<Book>>(url);
   }
 
   async getBookById(bookId: string): Promise<ApiResponse<Book>> {
@@ -610,31 +665,15 @@ class LibraryApiClient {
   }
 
   async getLoans(params?: LoanFilters): Promise<ApiResponse<PaginatedResponse<Loan>>> {
-    const query = new URLSearchParams();
-    if (params) {
-      Object.entries(params).forEach(([key, value]) => {
-        if (value !== undefined && value !== null && value !== '') {
-          query.append(key, value.toString());
-        }
-      });
-    }
-
-    const queryString = query.toString();
-    return this.request<PaginatedResponse<Loan>>(`/library/loans?${queryString}`);
+    const queryString = this.buildQueryString(params);
+    const url = queryString ? `/library/loans?${queryString}` : '/library/loans';
+    return this.request<PaginatedResponse<Loan>>(url);
   }
 
   async getActiveLoans(params?: LoanFilters): Promise<ApiResponse<PaginatedResponse<Loan>>> {
-    const query = new URLSearchParams();
-    if (params) {
-      Object.entries(params).forEach(([key, value]) => {
-        if (value !== undefined && value !== null && value !== '') {
-          query.append(key, value.toString());
-        }
-      });
-    }
-
-    const queryString = query.toString();
-    return this.request<PaginatedResponse<Loan>>(`/library/loans/active?${queryString}`);
+    const queryString = this.buildQueryString(params);
+    const url = queryString ? `/library/loans/active?${queryString}` : '/library/loans/active';
+    return this.request<PaginatedResponse<Loan>>(url);
   }
 
   async getOverdueLoans(): Promise<ApiResponse<Loan[]>> {
@@ -648,7 +687,7 @@ class LibraryApiClient {
     });
   }
 
-  // User Management
+  // User Loan Management
   async getUserBorrowingStatus(userId: string): Promise<ApiResponse<UserBorrowingStatus>> {
     return this.request<UserBorrowingStatus>(`/library/users/${userId}/borrowing-status`);
   }
@@ -662,18 +701,13 @@ class LibraryApiClient {
     page?: number;
     limit?: number;
   }): Promise<ApiResponse<PaginatedResponse<Loan>>> {
-    const query = new URLSearchParams();
-    if (params) {
-      Object.entries(params).forEach(([key, value]) => {
-        if (value !== undefined && value !== null && value !== '') {
-          query.append(key, value.toString());
-        }
-      });
-    }
-
-    const queryString = query.toString();
-    return this.request<PaginatedResponse<Loan>>(`/library/users/${userId}/history?${queryString}`);
+    const queryString = this.buildQueryString(params);
+    const url = queryString 
+      ? `/library/users/${userId}/history?${queryString}`
+      : `/library/users/${userId}/history`;
+    return this.request<PaginatedResponse<Loan>>(url);
   }
+
 
   async getUserFines(userId: string): Promise<ApiResponse<UserFines>> {
     return this.request<UserFines>(`/library/users/${userId}/fines`);
@@ -686,18 +720,9 @@ class LibraryApiClient {
     author?: string;
     available?: boolean;
   }): Promise<ApiResponse<Book[]>> {
-    const searchParams = new URLSearchParams();
-    searchParams.append('query', query);
-    
-    if (filters) {
-      Object.entries(filters).forEach(([key, value]) => {
-        if (value !== undefined && value !== null && value !== '') {
-          searchParams.append(key, value.toString());
-        }
-      });
-    }
-
-    return this.request<Book[]>(`/library/search?${searchParams.toString()}`);
+    const searchParams: Record<string, any> = { query, ...filters };
+    const queryString = this.buildQueryString(searchParams);
+    return this.request<Book[]>(`/library/search?${queryString}`);
   }
 
   async getPopularBooks(limit: number = 10): Promise<ApiResponse<Book[]>> {
@@ -716,11 +741,7 @@ class LibraryApiClient {
     return this.request<string[]>('/library/authors');
   }
 
-  // Dashboard
-  async getDashboard(): Promise<ApiResponse<DashboardData>> {
-    return this.request<DashboardData>('/library/dashboard');
-  }
-
+  // Statistics
   async getStatistics(): Promise<ApiResponse<LibraryStats>> {
     return this.request<LibraryStats>('/library/statistics');
   }
@@ -730,17 +751,9 @@ class LibraryApiClient {
     endDate?: string;
     reportType?: string;
   }): Promise<ApiResponse<UsageReport>> {
-    const query = new URLSearchParams();
-    if (params) {
-      Object.entries(params).forEach(([key, value]) => {
-        if (value !== undefined && value !== null && value !== '') {
-          query.append(key, value.toString());
-        }
-      });
-    }
-
-    const queryString = query.toString();
-    return this.request<UsageReport>(`/library/usage-report?${queryString}`);
+    const queryString = this.buildQueryString(params);
+    const url = queryString ? `/library/usage-report?${queryString}` : '/library/usage-report';
+    return this.request<UsageReport>(url);
   }
 
   // Settings
@@ -796,22 +809,30 @@ class LibraryApiClient {
     streamId?: string; 
     page?: number;
     limit?: number;
+    search?: string;
+    status?: 'ACTIVE' | 'INACTIVE';
   }): Promise<ApiResponse<{ students: StudentResponse[] }>> {
-    const query = new URLSearchParams();
-    if (params) {
-      Object.entries(params).forEach(([key, value]) => {
-        if (value !== undefined && value !== null && value !== '') {
-          query.append(key, value.toString());
-        }
-      });
-    }
-
-    const queryString = query.toString();
-    return this.request<{ students: StudentResponse[] }>(`/students?${queryString}`);
+    const queryString = this.buildQueryString(params);
+    const url = queryString ? `/students?${queryString}` : '/students';
+    return this.request<{ students: StudentResponse[] }>(url);
   }
 
   async getClasses(): Promise<ApiResponse<GetClassesResponse>> {
     return this.request<GetClassesResponse>('/academics/classes');
+  }
+
+  async getClassById(classId: string): Promise<ApiResponse<ClassResponse>> {
+    return this.request<ClassResponse>(`/academics/classes/${classId}`);
+  }
+
+  // Recent Activity
+  async getRecentActivity(limit: number = 10): Promise<ApiResponse<RecentActivity[]>> {
+    return this.request<RecentActivity[]>(`/library/recent-activity?limit=${limit}`);
+  }
+
+  // Health Check
+  async healthCheck(): Promise<ApiResponse<{ status: string; timestamp: string }>> {
+    return this.request<{ status: string; timestamp: string }>('/health');
   }
 }
 

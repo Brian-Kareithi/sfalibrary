@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/context/authcontext';
 import { libraryApi } from '@/lib/api';
-import { Loan, LoanFilters } from './components/loan';
+import { Loan, LoanFilters, LoanTableProps, LoanStatsProps } from './components/loan';
 import LoanStats from './components/LoanStats';
 import LoansTable from './components/LoansTable';
 import BorrowBookModal from './components/BorrowBookModal';
@@ -10,6 +10,16 @@ import ReturnBookModal from './components/ReturnBookModal';
 import { toast } from 'react-hot-toast';
 
 type ActiveTab = 'all' | 'active' | 'overdue';
+
+interface LoansApiResponse {
+  data: Loan[];
+  pagination?: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
 
 export default function LoansPage() {
   const { hasRole } = useAuth();
@@ -30,6 +40,36 @@ export default function LoansPage() {
   const [isReturnModalOpen, setIsReturnModalOpen] = useState(false);
   const [selectedLoan, setSelectedLoan] = useState<Loan | null>(null);
 
+  const extractLoansFromResponse = (responseData: unknown): Loan[] => {
+    // Handle array response directly
+    if (Array.isArray(responseData)) {
+      return responseData;
+    }
+    
+    // Handle object response with data property
+    if (responseData && typeof responseData === 'object') {
+      const dataObj = responseData as Record<string, unknown>;
+      
+      // Check for data property that contains array
+      if ('data' in dataObj && Array.isArray(dataObj.data)) {
+        return dataObj.data as Loan[];
+      }
+      
+      // Check for loans property that contains array
+      if ('loans' in dataObj && Array.isArray(dataObj.loans)) {
+        return dataObj.loans as Loan[];
+      }
+      
+      // Check for items property that contains array
+      if ('items' in dataObj && Array.isArray(dataObj.items)) {
+        return dataObj.items as Loan[];
+      }
+    }
+    
+    console.warn('Unexpected loans response format:', responseData);
+    return [];
+  };
+
   const loadLoans = useCallback(async () => {
     try {
       setLoading(true);
@@ -48,9 +88,16 @@ export default function LoansPage() {
       }
 
       if (response.success) {
-        setLoans(response.data.data || response.data);
+        const loansData = extractLoansFromResponse(response.data);
+        setLoans(loansData);
+        
         if (response.pagination) {
           setPagination(response.pagination);
+        } else if (response.data && typeof response.data === 'object') {
+          const data = response.data as LoansApiResponse;
+          if (data.pagination) {
+            setPagination(data.pagination);
+          }
         }
       }
     } catch (error) {
@@ -65,32 +112,25 @@ export default function LoansPage() {
     loadLoans();
   }, [loadLoans]);
 
-  const handleBorrowSuccess = () => {
+  const handleBorrowSuccess = (): void => {
     setIsBorrowModalOpen(false);
     loadLoans();
+    toast.success('Book issued successfully!');
   };
 
-  const handleReturnSuccess = () => {
+  const handleReturnSuccess = (): void => {
     setIsReturnModalOpen(false);
     setSelectedLoan(null);
     loadLoans();
+    toast.success('Book returned successfully!');
   };
 
-  const handleRenewSuccess = () => {
-    loadLoans();
-    toast.success('Loan renewed successfully!');
-  };
-
-  const handleReturnClick = (loan: Loan) => {
-    setSelectedLoan(loan);
-    setIsReturnModalOpen(true);
-  };
-
-  const handleRenewClick = async (loan: Loan) => {
+  const handleRenewClick = async (loan: Loan): Promise<void> => {
     try {
       const response = await libraryApi.renewLoan(loan.id);
       if (response.success) {
-        handleRenewSuccess();
+        loadLoans();
+        toast.success('Loan renewed successfully!');
       }
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to renew loan';
@@ -98,11 +138,19 @@ export default function LoansPage() {
     }
   };
 
-  const handlePageChange = (newPage: number) => {
+  const handleReturnClick = (loan: Loan): void => {
+    setSelectedLoan(loan);
+    setIsReturnModalOpen(true);
+  };
+
+  const handlePageChange = (newPage: number): void => {
     setFilters(prev => ({ ...prev, page: newPage }));
   };
 
-  if (!hasRole(['ADMIN', 'LIBRARIAN', 'STAFF'])) {
+  // Check if user has required role
+  const canAccess = hasRole && hasRole(['ADMIN', 'LIBRARIAN', 'STAFF']);
+
+  if (!canAccess) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex items-center justify-center p-4">
         <div className="text-center max-w-md">
@@ -119,6 +167,19 @@ export default function LoansPage() {
       </div>
     );
   }
+
+  const loanStatsProps: LoanStatsProps = {
+    loans,
+    activeTab
+  };
+
+  const loanTableProps: LoanTableProps = {
+    loans,
+    loading,
+    onReturnClick: handleReturnClick,
+    onRenewClick: handleRenewClick,
+    activeTab
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
@@ -149,7 +210,7 @@ export default function LoansPage() {
         </div>
 
         {/* Loan Statistics */}
-        <LoanStats loans={loans} activeTab={activeTab} />
+        <LoanStats {...loanStatsProps} />
 
         {/* Tabs */}
         <div className="mb-6">
@@ -178,13 +239,7 @@ export default function LoansPage() {
 
         {/* Loans Table */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-          <LoansTable
-            loans={loans}
-            loading={loading}
-            onReturnClick={handleReturnClick}
-            onRenewClick={handleRenewClick}
-            activeTab={activeTab}
-          />
+          <LoansTable {...loanTableProps} />
         </div>
 
         {/* Pagination */}
