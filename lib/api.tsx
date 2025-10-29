@@ -425,7 +425,7 @@ class LibraryApiClient {
     return headers;
   }
 
-  private buildQueryString(params?: Record<string, any>): string {
+  private buildQueryString(params?: Record<string, unknown>): string {
     if (!params) return '';
     
     const query = new URLSearchParams();
@@ -521,7 +521,6 @@ class LibraryApiClient {
     }
   }
 
-
   async logout(): Promise<ApiResponse<{ message: string }>> {
     const result = await this.request<{ message: string }>('/users/logout', {
       method: 'POST',
@@ -548,7 +547,7 @@ class LibraryApiClient {
     role?: string;
     search?: string;
   }): Promise<ApiResponse<PaginatedResponse<User>>> {
-    const queryString = this.buildQueryString(params);
+    const queryString = this.buildQueryString(params as Record<string, unknown>);
     const url = queryString ? `/users?${queryString}` : '/users';
     return this.request<PaginatedResponse<User>>(url);
   }
@@ -577,7 +576,7 @@ class LibraryApiClient {
 
   // Book Management
   async getBooks(params?: BookFilters): Promise<ApiResponse<PaginatedResponse<Book>>> {
-    const queryString = this.buildQueryString(params);
+    const queryString = this.buildQueryString(params as Record<string, unknown>);
     const url = queryString ? `/library/books?${queryString}` : '/library/books';
     return this.request<PaginatedResponse<Book>>(url);
   }
@@ -665,13 +664,13 @@ class LibraryApiClient {
   }
 
   async getLoans(params?: LoanFilters): Promise<ApiResponse<PaginatedResponse<Loan>>> {
-    const queryString = this.buildQueryString(params);
+    const queryString = this.buildQueryString(params as Record<string, unknown>);
     const url = queryString ? `/library/loans?${queryString}` : '/library/loans';
     return this.request<PaginatedResponse<Loan>>(url);
   }
 
   async getActiveLoans(params?: LoanFilters): Promise<ApiResponse<PaginatedResponse<Loan>>> {
-    const queryString = this.buildQueryString(params);
+    const queryString = this.buildQueryString(params as Record<string, unknown>);
     const url = queryString ? `/library/loans/active?${queryString}` : '/library/loans/active';
     return this.request<PaginatedResponse<Loan>>(url);
   }
@@ -701,13 +700,12 @@ class LibraryApiClient {
     page?: number;
     limit?: number;
   }): Promise<ApiResponse<PaginatedResponse<Loan>>> {
-    const queryString = this.buildQueryString(params);
+    const queryString = this.buildQueryString(params as Record<string, unknown>);
     const url = queryString 
       ? `/library/users/${userId}/history?${queryString}`
       : `/library/users/${userId}/history`;
     return this.request<PaginatedResponse<Loan>>(url);
   }
-
 
   async getUserFines(userId: string): Promise<ApiResponse<UserFines>> {
     return this.request<UserFines>(`/library/users/${userId}/fines`);
@@ -720,7 +718,7 @@ class LibraryApiClient {
     author?: string;
     available?: boolean;
   }): Promise<ApiResponse<Book[]>> {
-    const searchParams: Record<string, any> = { query, ...filters };
+    const searchParams: Record<string, unknown> = { query, ...filters };
     const queryString = this.buildQueryString(searchParams);
     return this.request<Book[]>(`/library/search?${queryString}`);
   }
@@ -751,7 +749,7 @@ class LibraryApiClient {
     endDate?: string;
     reportType?: string;
   }): Promise<ApiResponse<UsageReport>> {
-    const queryString = this.buildQueryString(params);
+    const queryString = this.buildQueryString(params as Record<string, unknown>);
     const url = queryString ? `/library/usage-report?${queryString}` : '/library/usage-report';
     return this.request<UsageReport>(url);
   }
@@ -812,7 +810,7 @@ class LibraryApiClient {
     search?: string;
     status?: 'ACTIVE' | 'INACTIVE';
   }): Promise<ApiResponse<{ students: StudentResponse[] }>> {
-    const queryString = this.buildQueryString(params);
+    const queryString = this.buildQueryString(params as Record<string, unknown>);
     const url = queryString ? `/students?${queryString}` : '/students';
     return this.request<{ students: StudentResponse[] }>(url);
   }
