@@ -3,100 +3,95 @@ import { useState, useEffect } from 'react';
 import { libraryApi } from '@/lib/api';
 import { toast } from 'react-hot-toast';
 
+// Updated interface to match the API structure
 interface LibrarySettings {
-  general: {
-    libraryName: string;
-    libraryEmail: string;
-    libraryPhone: string;
-    libraryAddress: string;
-    openingHours: string;
-    maxBorrowLimit: number;
-    reservationExpiryDays: number;
+  id: string;
+  maxBooksPerUser: number;
+  defaultLoanDays: number;
+  maxRenewals: number;
+  fineGraceDays: number;
+  defaultDailyFine: number;
+  maxFineAmount: number;
+  digitalDownloadLimit: number;
+  digitalAccessDays: number;
+  enableReservations: boolean;
+  reservationDays: number;
+  dueDateReminderDays: number;
+  overdueNoticeDays: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// API response interface that handles both flat and nested structures
+interface ApiSettingsResponse {
+  id?: string;
+  maxBooksPerUser?: number;
+  defaultLoanDays?: number;
+  maxRenewals?: number;
+  fineGraceDays?: number;
+  defaultDailyFine?: number;
+  maxFineAmount?: number;
+  digitalDownloadLimit?: number;
+  digitalAccessDays?: number;
+  enableReservations?: boolean;
+  reservationDays?: number;
+  dueDateReminderDays?: number;
+  overdueNoticeDays?: number;
+  isActive?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+  general?: {
+    maxBorrowLimit?: number;
+    reservationExpiryDays?: number;
   };
-  borrowing: {
-    defaultLoanPeriod: number;
-    maxRenewals: number;
-    renewalExtensionDays: number;
-    dailyFineAmount: number;
-    maxFineAmount: number;
-    gracePeriodDays: number;
+  borrowing?: {
+    defaultLoanPeriod?: number;
+    maxRenewals?: number;
+    gracePeriodDays?: number;
+    dailyFineAmount?: number;
+    maxFineAmount?: number;
   };
-  notifications: {
-    dueSoonReminderDays: number;
-    overdueReminderInterval: number;
-    sendEmailNotifications: boolean;
-    sendSMSNotifications: boolean;
-    autoSendReports: boolean;
-  };
-  security: {
-    sessionTimeout: number;
-    requireReauthentication: boolean;
-    passwordExpiryDays: number;
-    maxLoginAttempts: number;
+  notifications?: {
+    dueSoonReminderDays?: number;
+    overdueReminderInterval?: number;
   };
 }
 
-// Define a partial type for API settings that might be incomplete
-type PartialLibrarySettings = {
-  [K in keyof LibrarySettings]?: Partial<LibrarySettings[K]>;
-};
-
 const defaultSettings: LibrarySettings = {
-  general: {
-    libraryName: 'Steadfast School Library',
-    libraryEmail: 'library@steadfastschool.ac.ke',
-    libraryPhone: '+254 700 000000',
-    libraryAddress: 'Steadfast School, Nairobi, Kenya',
-    openingHours: '8:00 AM - 5:00 PM',
-    maxBorrowLimit: 5,
-    reservationExpiryDays: 3,
-  },
-  borrowing: {
-    defaultLoanPeriod: 14,
-    maxRenewals: 2,
-    renewalExtensionDays: 14,
-    dailyFineAmount: 50,
-    maxFineAmount: 1000,
-    gracePeriodDays: 1,
-  },
-  notifications: {
-    dueSoonReminderDays: 3,
-    overdueReminderInterval: 7,
-    sendEmailNotifications: true,
-    sendSMSNotifications: false,
-    autoSendReports: true,
-  },
-  security: {
-    sessionTimeout: 60,
-    requireReauthentication: false,
-    passwordExpiryDays: 90,
-    maxLoginAttempts: 5,
-  },
+  id: '',
+  maxBooksPerUser: 5,
+  defaultLoanDays: 14,
+  maxRenewals: 2,
+  fineGraceDays: 1,
+  defaultDailyFine: 0,
+  maxFineAmount: 50,
+  digitalDownloadLimit: 3,
+  digitalAccessDays: 7,
+  enableReservations: false,
+  reservationDays: 3,
+  dueDateReminderDays: 2,
+  overdueNoticeDays: 1,
+  isActive: true,
+  createdAt: '',
+  updatedAt: ''
 };
 
-// Helper function to safely merge settings with defaults
-const mergeSettingsWithDefaults = (apiSettings: PartialLibrarySettings | null): LibrarySettings => {
-  if (!apiSettings) return defaultSettings;
-
-  return {
-    general: {
-      ...defaultSettings.general,
-      ...(apiSettings.general || {})
-    },
-    borrowing: {
-      ...defaultSettings.borrowing,
-      ...(apiSettings.borrowing || {})
-    },
-    notifications: {
-      ...defaultSettings.notifications,
-      ...(apiSettings.notifications || {})
-    },
-    security: {
-      ...defaultSettings.security,
-      ...(apiSettings.security || {})
-    }
-  };
-};
+// Update payload interface
+interface UpdateSettingsPayload {
+  maxBooksPerUser: number;
+  defaultLoanDays: number;
+  maxRenewals: number;
+  fineGraceDays: number;
+  defaultDailyFine: number;
+  maxFineAmount: number;
+  digitalDownloadLimit: number;
+  digitalAccessDays: number;
+  enableReservations: boolean;
+  reservationDays: number;
+  dueDateReminderDays: number;
+  overdueNoticeDays: number;
+}
 
 export default function SettingsPage() {
   const [settings, setSettings] = useState<LibrarySettings>(defaultSettings);
@@ -117,8 +112,48 @@ export default function SettingsPage() {
       const response = await libraryApi.getSettings();
       
       if (response.success && response.data) {
-        const mergedSettings = mergeSettingsWithDefaults(response.data);
-        setSettings(mergedSettings);
+        // Transform the nested API response to flat structure
+        const apiData = response.data as ApiSettingsResponse;
+        
+        // Handle both flat and nested structures with proper type checking
+        const transformedSettings: LibrarySettings = {
+          id: apiData.id || '',
+          maxBooksPerUser: apiData.maxBooksPerUser ?? 
+                           apiData.general?.maxBorrowLimit ?? 
+                           defaultSettings.maxBooksPerUser,
+          defaultLoanDays: apiData.defaultLoanDays ?? 
+                          apiData.borrowing?.defaultLoanPeriod ?? 
+                          defaultSettings.defaultLoanDays,
+          maxRenewals: apiData.maxRenewals ?? 
+                      apiData.borrowing?.maxRenewals ?? 
+                      defaultSettings.maxRenewals,
+          fineGraceDays: apiData.fineGraceDays ?? 
+                        apiData.borrowing?.gracePeriodDays ?? 
+                        defaultSettings.fineGraceDays,
+          defaultDailyFine: apiData.defaultDailyFine ?? 
+                          apiData.borrowing?.dailyFineAmount ?? 
+                          defaultSettings.defaultDailyFine,
+          maxFineAmount: apiData.maxFineAmount ?? 
+                       apiData.borrowing?.maxFineAmount ?? 
+                       defaultSettings.maxFineAmount,
+          digitalDownloadLimit: apiData.digitalDownloadLimit ?? defaultSettings.digitalDownloadLimit,
+          digitalAccessDays: apiData.digitalAccessDays ?? defaultSettings.digitalAccessDays,
+          enableReservations: apiData.enableReservations ?? defaultSettings.enableReservations,
+          reservationDays: apiData.reservationDays ?? 
+                         apiData.general?.reservationExpiryDays ?? 
+                         defaultSettings.reservationDays,
+          dueDateReminderDays: apiData.dueDateReminderDays ?? 
+                             apiData.notifications?.dueSoonReminderDays ?? 
+                             defaultSettings.dueDateReminderDays,
+          overdueNoticeDays: apiData.overdueNoticeDays ?? 
+                           apiData.notifications?.overdueReminderInterval ?? 
+                           defaultSettings.overdueNoticeDays,
+          isActive: apiData.isActive ?? defaultSettings.isActive,
+          createdAt: apiData.createdAt ?? defaultSettings.createdAt,
+          updatedAt: apiData.updatedAt ?? defaultSettings.updatedAt
+        };
+        
+        setSettings(transformedSettings);
       } else {
         setSettings(defaultSettings);
       }
@@ -136,34 +171,88 @@ export default function SettingsPage() {
       setSaving(true);
       setError(null);
 
-      const response = await libraryApi.updateSettings(settings);
+      // Validate all required fields have values
+      const validatedSettings: LibrarySettings = {
+        ...settings,
+        maxBooksPerUser: settings.maxBooksPerUser || defaultSettings.maxBooksPerUser,
+        defaultLoanDays: settings.defaultLoanDays || defaultSettings.defaultLoanDays,
+        maxRenewals: settings.maxRenewals || defaultSettings.maxRenewals,
+        fineGraceDays: settings.fineGraceDays || defaultSettings.fineGraceDays,
+        defaultDailyFine: settings.defaultDailyFine || defaultSettings.defaultDailyFine,
+        maxFineAmount: settings.maxFineAmount || defaultSettings.maxFineAmount,
+        digitalDownloadLimit: settings.digitalDownloadLimit || defaultSettings.digitalDownloadLimit,
+        digitalAccessDays: settings.digitalAccessDays || defaultSettings.digitalAccessDays,
+        reservationDays: settings.reservationDays || defaultSettings.reservationDays,
+        dueDateReminderDays: settings.dueDateReminderDays || defaultSettings.dueDateReminderDays,
+        overdueNoticeDays: settings.overdueNoticeDays || defaultSettings.overdueNoticeDays,
+      };
+
+      // Create update payload with only updatable fields
+      const updatePayload: UpdateSettingsPayload = {
+        maxBooksPerUser: validatedSettings.maxBooksPerUser,
+        defaultLoanDays: validatedSettings.defaultLoanDays,
+        maxRenewals: validatedSettings.maxRenewals,
+        fineGraceDays: validatedSettings.fineGraceDays,
+        defaultDailyFine: validatedSettings.defaultDailyFine,
+        maxFineAmount: validatedSettings.maxFineAmount,
+        digitalDownloadLimit: validatedSettings.digitalDownloadLimit,
+        digitalAccessDays: validatedSettings.digitalAccessDays,
+        enableReservations: validatedSettings.enableReservations,
+        reservationDays: validatedSettings.reservationDays,
+        dueDateReminderDays: validatedSettings.dueDateReminderDays,
+        overdueNoticeDays: validatedSettings.overdueNoticeDays,
+      };
+
+      const response = await libraryApi.updateSettings(updatePayload);
+      
       if (response.success) {
         toast.success('Settings saved successfully');
         setHasChanges(false);
+        // Reload settings to get updated data with new timestamps
+        await loadSettings();
       } else {
-        setError('Failed to save settings');
+        setError(response.message || 'Failed to save settings');
       }
     } catch (error) {
       console.error('Failed to save settings:', error);
-      setError('Failed to save settings');
+      setError(error instanceof Error ? error.message : 'Failed to save settings');
     } finally {
       setSaving(false);
     }
   };
 
-  const handleSettingChange = (
-    section: keyof LibrarySettings,
-    field: string,
-    value: string | number | boolean
-  ) => {
+  const handleSettingChange = (field: keyof LibrarySettings, value: string) => {
+    // Convert string to appropriate type based on the field's default type
+    const fieldType = typeof defaultSettings[field];
+    let processedValue: string | number | boolean = value;
+    
+    if (fieldType === 'number') {
+      // Allow empty string for manual input, convert to 0 only on save
+      processedValue = value === '' ? '' : Number(value);
+      // Ensure non-negative numbers for certain fields when not empty
+      if (value !== '' && (
+        field === 'maxBooksPerUser' || field === 'defaultLoanDays' || 
+        field === 'maxRenewals' || field === 'fineGraceDays' || 
+        field === 'defaultDailyFine' || field === 'maxFineAmount' ||
+        field === 'digitalDownloadLimit' || field === 'digitalAccessDays' ||
+        field === 'reservationDays' || field === 'dueDateReminderDays' ||
+        field === 'overdueNoticeDays'
+      )) {
+        processedValue = Math.max(0, Number(value));
+      }
+    } else if (fieldType === 'boolean') {
+      processedValue = value === 'true';
+    }
+
     setSettings(prev => ({
       ...prev,
-      [section]: {
-        ...prev[section],
-        [field]: value
-      }
+      [field]: processedValue
     }));
     setHasChanges(true);
+  };
+
+  const formatInputValue = (value: number | string): string => {
+    return value === '' ? '' : value.toString();
   };
 
   const handleResetToDefaults = () => {
@@ -171,15 +260,6 @@ export default function SettingsPage() {
       setSettings(defaultSettings);
       setHasChanges(true);
     }
-  };
-
-  // Safe value getter with fallback
-  const getSafeValue = (section: keyof LibrarySettings, field: string): string | number | boolean => {
-    const sectionData = settings[section];
-    if (sectionData && field in sectionData) {
-      return sectionData[field as keyof typeof sectionData];
-    }
-    return '';
   };
 
   if (loading) {
@@ -205,15 +285,17 @@ export default function SettingsPage() {
             </div>
             <div className="flex space-x-3">
               <button
+                type="button"
                 onClick={handleResetToDefaults}
                 className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
               >
                 Reset to Defaults
               </button>
               <button
+                type="button"
                 onClick={handleSaveSettings}
                 disabled={!hasChanges || saving}
-                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 rounded-md transition-colors"
+                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed rounded-md transition-colors"
               >
                 {saving ? 'Saving...' : 'Save Changes'}
               </button>
@@ -233,6 +315,7 @@ export default function SettingsPage() {
               <p className="text-sm text-red-700">{error}</p>
             </div>
             <button
+              type="button"
               onClick={() => setError(null)}
               className="text-red-500 hover:text-red-700"
             >
@@ -248,190 +331,189 @@ export default function SettingsPage() {
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="bg-white rounded-lg shadow-sm border border-gray-200">
           <div className="p-6">
-            {/* General Settings */}
+            {/* Borrowing Limits */}
             <div className="space-y-6">
               <div>
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">General Settings</h2>
+                <h2 className="text-lg font-semibold text-gray-900 mb-4">Borrowing Limits</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Library Name
+                    <label htmlFor="maxBooksPerUser" className="block text-sm font-medium text-gray-700 mb-1">
+                      Maximum Books Per User
                     </label>
                     <input
-                      type="text"
-                      value={getSafeValue('general', 'libraryName') as string}
-                      onChange={(e) => handleSettingChange('general', 'libraryName', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Library Email
-                    </label>
-                    <input
-                      type="email"
-                      value={getSafeValue('general', 'libraryEmail') as string}
-                      onChange={(e) => handleSettingChange('general', 'libraryEmail', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Phone Number
-                    </label>
-                    <input
-                      type="tel"
-                      value={getSafeValue('general', 'libraryPhone') as string}
-                      onChange={(e) => handleSettingChange('general', 'libraryPhone', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Max Borrow Limit
-                    </label>
-                    <input
+                      id="maxBooksPerUser"
                       type="number"
-                      min="1"
-                      max="20"
-                      value={getSafeValue('general', 'maxBorrowLimit') as number}
-                      onChange={(e) => handleSettingChange('general', 'maxBorrowLimit', parseInt(e.target.value) || 0)}
+                      min="0"
+                      value={formatInputValue(settings.maxBooksPerUser)}
+                      onChange={(e) => handleSettingChange('maxBooksPerUser', e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
-                    />
-                  </div>
-
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Library Address
-                    </label>
-                    <textarea
-                      value={getSafeValue('general', 'libraryAddress') as string}
-                      onChange={(e) => handleSettingChange('general', 'libraryAddress', e.target.value)}
-                      rows={2}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                      placeholder="Enter maximum books"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Opening Hours
+                    <label htmlFor="defaultLoanDays" className="block text-sm font-medium text-gray-700 mb-1">
+                      Default Loan Period (Days)
                     </label>
                     <input
-                      type="text"
-                      value={getSafeValue('general', 'openingHours') as string}
-                      onChange={(e) => handleSettingChange('general', 'openingHours', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Reservation Expiry (Days)
-                    </label>
-                    <input
+                      id="defaultLoanDays"
                       type="number"
-                      min="1"
-                      max="30"
-                      value={getSafeValue('general', 'reservationExpiryDays') as number}
-                      onChange={(e) => handleSettingChange('general', 'reservationExpiryDays', parseInt(e.target.value) || 0)}
+                      min="0"
+                      value={formatInputValue(settings.defaultLoanDays)}
+                      onChange={(e) => handleSettingChange('defaultLoanDays', e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                      placeholder="Enter loan days"
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="maxRenewals" className="block text-sm font-medium text-gray-700 mb-1">
+                      Maximum Renewals
+                    </label>
+                    <input
+                      id="maxRenewals"
+                      type="number"
+                      min="0"
+                      value={formatInputValue(settings.maxRenewals)}
+                      onChange={(e) => handleSettingChange('maxRenewals', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                      placeholder="Enter maximum renewals"
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="fineGraceDays" className="block text-sm font-medium text-gray-700 mb-1">
+                      Fine Grace Period (Days)
+                    </label>
+                    <input
+                      id="fineGraceDays"
+                      type="number"
+                      min="0"
+                      value={formatInputValue(settings.fineGraceDays)}
+                      onChange={(e) => handleSettingChange('fineGraceDays', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                      placeholder="Enter grace period days"
                     />
                   </div>
                 </div>
               </div>
 
-              {/* Borrowing Rules */}
+              {/* Fines & Penalties */}
               <div className="border-t pt-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">Borrowing Rules</h2>
+                <h2 className="text-lg font-semibold text-gray-900 mb-4">Fines & Penalties</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Default Loan Period (Days)
-                    </label>
-                    <input
-                      type="number"
-                      min="1"
-                      max="365"
-                      value={getSafeValue('borrowing', 'defaultLoanPeriod') as number}
-                      onChange={(e) => handleSettingChange('borrowing', 'defaultLoanPeriod', parseInt(e.target.value) || 0)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Maximum Renewals
-                    </label>
-                    <input
-                      type="number"
-                      min="0"
-                      max="10"
-                      value={getSafeValue('borrowing', 'maxRenewals') as number}
-                      onChange={(e) => handleSettingChange('borrowing', 'maxRenewals', parseInt(e.target.value) || 0)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Renewal Extension (Days)
-                    </label>
-                    <input
-                      type="number"
-                      min="1"
-                      max="365"
-                      value={getSafeValue('borrowing', 'renewalExtensionDays') as number}
-                      onChange={(e) => handleSettingChange('borrowing', 'renewalExtensionDays', parseInt(e.target.value) || 0)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Grace Period (Days)
-                    </label>
-                    <input
-                      type="number"
-                      min="0"
-                      max="7"
-                      value={getSafeValue('borrowing', 'gracePeriodDays') as number}
-                      onChange={(e) => handleSettingChange('borrowing', 'gracePeriodDays', parseInt(e.target.value) || 0)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label htmlFor="defaultDailyFine" className="block text-sm font-medium text-gray-700 mb-1">
                       Daily Fine Amount (KSh)
                     </label>
                     <input
+                      id="defaultDailyFine"
                       type="number"
                       min="0"
-                      max="1000"
-                      step="10"
-                      value={getSafeValue('borrowing', 'dailyFineAmount') as number}
-                      onChange={(e) => handleSettingChange('borrowing', 'dailyFineAmount', parseFloat(e.target.value) || 0)}
+                      step="0.01"
+                      value={formatInputValue(settings.defaultDailyFine)}
+                      onChange={(e) => handleSettingChange('defaultDailyFine', e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                      placeholder="Enter daily fine amount"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label htmlFor="maxFineAmount" className="block text-sm font-medium text-gray-700 mb-1">
                       Maximum Fine Amount (KSh)
                     </label>
                     <input
+                      id="maxFineAmount"
                       type="number"
                       min="0"
-                      max="10000"
-                      step="10"
-                      value={getSafeValue('borrowing', 'maxFineAmount') as number}
-                      onChange={(e) => handleSettingChange('borrowing', 'maxFineAmount', parseFloat(e.target.value) || 0)}
+                      step="0.01"
+                      value={formatInputValue(settings.maxFineAmount)}
+                      onChange={(e) => handleSettingChange('maxFineAmount', e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                      placeholder="Enter maximum fine amount"
                     />
                   </div>
+                </div>
+              </div>
+
+              {/* Digital Resources */}
+              <div className="border-t pt-6">
+                <h2 className="text-lg font-semibold text-gray-900 mb-4">Digital Resources</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label htmlFor="digitalDownloadLimit" className="block text-sm font-medium text-gray-700 mb-1">
+                      Digital Download Limit
+                    </label>
+                    <input
+                      id="digitalDownloadLimit"
+                      type="number"
+                      min="0"
+                      value={formatInputValue(settings.digitalDownloadLimit)}
+                      onChange={(e) => handleSettingChange('digitalDownloadLimit', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                      placeholder="Enter download limit"
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="digitalAccessDays" className="block text-sm font-medium text-gray-700 mb-1">
+                      Digital Access Days
+                    </label>
+                    <input
+                      id="digitalAccessDays"
+                      type="number"
+                      min="0"
+                      value={formatInputValue(settings.digitalAccessDays)}
+                      onChange={(e) => handleSettingChange('digitalAccessDays', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                      placeholder="Enter access days"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Reservations */}
+              <div className="border-t pt-6">
+                <h2 className="text-lg font-semibold text-gray-900 mb-4">Reservations</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="flex items-center justify-between md:col-span-2">
+                    <label htmlFor="enableReservations" className="text-sm font-medium text-gray-700">
+                      Enable Reservations
+                    </label>
+                    <button
+                      type="button"
+                      id="enableReservations"
+                      onClick={() => handleSettingChange('enableReservations', (!settings.enableReservations).toString())}
+                      className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                        settings.enableReservations ? 'bg-blue-600' : 'bg-gray-300'
+                      }`}
+                      role="switch"
+                      aria-checked={settings.enableReservations}
+                    >
+                      <span
+                        className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                          settings.enableReservations ? 'translate-x-5' : 'translate-x-0'
+                        }`}
+                      />
+                    </button>
+                  </div>
+
+                  {settings.enableReservations && (
+                    <div>
+                      <label htmlFor="reservationDays" className="block text-sm font-medium text-gray-700 mb-1">
+                        Reservation Hold Days
+                      </label>
+                      <input
+                        id="reservationDays"
+                        type="number"
+                        min="0"
+                        value={formatInputValue(settings.reservationDays)}
+                        onChange={(e) => handleSettingChange('reservationDays', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                        placeholder="Enter reservation hold days"
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -440,147 +522,62 @@ export default function SettingsPage() {
                 <h2 className="text-lg font-semibold text-gray-900 mb-4">Notifications</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Due Soon Reminder (Days)
+                    <label htmlFor="dueDateReminderDays" className="block text-sm font-medium text-gray-700 mb-1">
+                      Due Date Reminder (Days Before)
                     </label>
                     <input
+                      id="dueDateReminderDays"
                       type="number"
-                      min="1"
-                      max="14"
-                      value={getSafeValue('notifications', 'dueSoonReminderDays') as number}
-                      onChange={(e) => handleSettingChange('notifications', 'dueSoonReminderDays', parseInt(e.target.value) || 0)}
+                      min="0"
+                      value={formatInputValue(settings.dueDateReminderDays)}
+                      onChange={(e) => handleSettingChange('dueDateReminderDays', e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                      placeholder="Enter reminder days"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Overdue Reminder Interval (Days)
+                    <label htmlFor="overdueNoticeDays" className="block text-sm font-medium text-gray-700 mb-1">
+                      Overdue Notice (Days After Due)
                     </label>
                     <input
+                      id="overdueNoticeDays"
                       type="number"
-                      min="1"
-                      max="30"
-                      value={getSafeValue('notifications', 'overdueReminderInterval') as number}
-                      onChange={(e) => handleSettingChange('notifications', 'overdueReminderInterval', parseInt(e.target.value) || 0)}
+                      min="0"
+                      value={formatInputValue(settings.overdueNoticeDays)}
+                      onChange={(e) => handleSettingChange('overdueNoticeDays', e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                      placeholder="Enter overdue notice days"
                     />
-                  </div>
-
-                  <div className="md:col-span-2">
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <label className="text-sm font-medium text-gray-700">Email Notifications</label>
-                        <button
-                          onClick={() => handleSettingChange('notifications', 'sendEmailNotifications', !(getSafeValue('notifications', 'sendEmailNotifications') as boolean))}
-                          className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                            getSafeValue('notifications', 'sendEmailNotifications') ? 'bg-blue-600' : 'bg-gray-300'
-                          }`}
-                        >
-                          <span
-                            className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                              getSafeValue('notifications', 'sendEmailNotifications') ? 'translate-x-5' : 'translate-x-0'
-                            }`}
-                          />
-                        </button>
-                      </div>
-
-                      <div className="flex items-center justify-between">
-                        <label className="text-sm font-medium text-gray-700">SMS Notifications</label>
-                        <button
-                          onClick={() => handleSettingChange('notifications', 'sendSMSNotifications', !(getSafeValue('notifications', 'sendSMSNotifications') as boolean))}
-                          className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                            getSafeValue('notifications', 'sendSMSNotifications') ? 'bg-blue-600' : 'bg-gray-300'
-                          }`}
-                        >
-                          <span
-                            className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                              getSafeValue('notifications', 'sendSMSNotifications') ? 'translate-x-5' : 'translate-x-0'
-                            }`}
-                          />
-                        </button>
-                      </div>
-
-                      <div className="flex items-center justify-between">
-                        <label className="text-sm font-medium text-gray-700">Auto-send Reports</label>
-                        <button
-                          onClick={() => handleSettingChange('notifications', 'autoSendReports', !(getSafeValue('notifications', 'autoSendReports') as boolean))}
-                          className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                            getSafeValue('notifications', 'autoSendReports') ? 'bg-blue-600' : 'bg-gray-300'
-                          }`}
-                        >
-                          <span
-                            className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                              getSafeValue('notifications', 'autoSendReports') ? 'translate-x-5' : 'translate-x-0'
-                            }`}
-                          />
-                        </button>
-                      </div>
-                    </div>
                   </div>
                 </div>
               </div>
 
-              {/* Security */}
+              {/* System Info */}
               <div className="border-t pt-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">Security</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <h2 className="text-lg font-semibold text-gray-900 mb-4">System Information</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Session Timeout (Minutes)
-                    </label>
-                    <input
-                      type="number"
-                      min="5"
-                      max="480"
-                      value={getSafeValue('security', 'sessionTimeout') as number}
-                      onChange={(e) => handleSettingChange('security', 'sessionTimeout', parseInt(e.target.value) || 0)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
-                    />
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Last Updated</label>
+                    <p className="text-gray-600">
+                      {settings.updatedAt ? new Date(settings.updatedAt).toLocaleString() : 'Never'}
+                    </p>
                   </div>
-
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Password Expiry (Days)
-                    </label>
-                    <input
-                      type="number"
-                      min="1"
-                      max="365"
-                      value={getSafeValue('security', 'passwordExpiryDays') as number}
-                      onChange={(e) => handleSettingChange('security', 'passwordExpiryDays', parseInt(e.target.value) || 0)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
-                    />
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Created</label>
+                    <p className="text-gray-600">
+                      {settings.createdAt ? new Date(settings.createdAt).toLocaleString() : 'Unknown'}
+                    </p>
                   </div>
-
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Maximum Login Attempts
-                    </label>
-                    <input
-                      type="number"
-                      min="1"
-                      max="10"
-                      value={getSafeValue('security', 'maxLoginAttempts') as number}
-                      onChange={(e) => handleSettingChange('security', 'maxLoginAttempts', parseInt(e.target.value) || 0)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-between md:col-span-2">
-                    <label className="text-sm font-medium text-gray-700">Require Reauthentication</label>
-                    <button
-                      onClick={() => handleSettingChange('security', 'requireReauthentication', !(getSafeValue('security', 'requireReauthentication') as boolean))}
-                      className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                        getSafeValue('security', 'requireReauthentication') ? 'bg-blue-600' : 'bg-gray-300'
-                      }`}
-                    >
-                      <span
-                        className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                          getSafeValue('security', 'requireReauthentication') ? 'translate-x-5' : 'translate-x-0'
-                        }`}
-                      />
-                    </button>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                      settings.isActive 
+                        ? 'bg-green-100 text-green-800' 
+                        : 'bg-red-100 text-red-800'
+                    }`}>
+                      {settings.isActive ? 'Active' : 'Inactive'}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -595,6 +592,7 @@ export default function SettingsPage() {
                   </div>
                   <div className="flex space-x-3">
                     <button
+                      type="button"
                       onClick={() => {
                         setHasChanges(false);
                         loadSettings();
@@ -604,9 +602,10 @@ export default function SettingsPage() {
                       Discard Changes
                     </button>
                     <button
+                      type="button"
                       onClick={handleSaveSettings}
                       disabled={saving}
-                      className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors disabled:bg-gray-400"
+                      className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
                     >
                       {saving ? 'Saving...' : 'Save Changes'}
                     </button>

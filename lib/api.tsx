@@ -176,7 +176,7 @@ export interface PaginatedResponse<T> {
     total: number;
     totalPages: number;
   };
-    summary?: {  // Add this as optional
+  summary?: {
     totalBooks: number;
     totalCopies: number;
     availableCopies: number;
@@ -315,38 +315,40 @@ export interface UsageReport {
   activeUsers: User[];
 }
 
-// Updated LibrarySettings interface to match the settings page
+// Flat Library Settings interface matching the API
 export interface LibrarySettings {
-  general: {
-    libraryName: string;
-    libraryEmail: string;
-    libraryPhone: string;
-    libraryAddress: string;
-    openingHours: string;
-    maxBorrowLimit: number;
-    reservationExpiryDays: number;
-  };
-  borrowing: {
-    defaultLoanPeriod: number;
-    maxRenewals: number;
-    renewalExtensionDays: number;
-    dailyFineAmount: number;
-    maxFineAmount: number;
-    gracePeriodDays: number;
-  };
-  notifications: {
-    dueSoonReminderDays: number;
-    overdueReminderInterval: number;
-    sendEmailNotifications: boolean;
-    sendSMSNotifications: boolean;
-    autoSendReports: boolean;
-  };
-  security: {
-    sessionTimeout: number;
-    requireReauthentication: boolean;
-    passwordExpiryDays: number;
-    maxLoginAttempts: number;
-  };
+  id: string;
+  maxBooksPerUser: number;
+  defaultLoanDays: number;
+  maxRenewals: number;
+  fineGraceDays: number;
+  defaultDailyFine: number;
+  maxFineAmount: number;
+  digitalDownloadLimit: number;
+  digitalAccessDays: number;
+  enableReservations: boolean;
+  reservationDays: number;
+  dueDateReminderDays: number;
+  overdueNoticeDays: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Update settings payload
+export interface UpdateSettingsPayload {
+  maxBooksPerUser?: number;
+  defaultLoanDays?: number;
+  maxRenewals?: number;
+  fineGraceDays?: number;
+  defaultDailyFine?: number;
+  maxFineAmount?: number;
+  digitalDownloadLimit?: number;
+  digitalAccessDays?: number;
+  enableReservations?: boolean;
+  reservationDays?: number;
+  dueDateReminderDays?: number;
+  overdueNoticeDays?: number;
 }
 
 export interface CreateBookRequest {
@@ -760,12 +762,12 @@ class LibraryApiClient {
     return this.request<UsageReport>(url);
   }
 
-  // Settings
+  // Settings - Updated for flat structure
   async getSettings(): Promise<ApiResponse<LibrarySettings>> {
     return this.request<LibrarySettings>('/library/settings');
   }
 
-  async updateSettings(settings: LibrarySettings): Promise<ApiResponse<LibrarySettings>> {
+  async updateSettings(settings: UpdateSettingsPayload): Promise<ApiResponse<LibrarySettings>> {
     return this.request<LibrarySettings>('/library/settings', {
       method: 'PUT',
       body: JSON.stringify(settings),
