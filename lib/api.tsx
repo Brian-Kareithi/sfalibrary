@@ -176,6 +176,12 @@ export interface PaginatedResponse<T> {
     total: number;
     totalPages: number;
   };
+    summary?: {  // Add this as optional
+    totalBooks: number;
+    totalCopies: number;
+    availableCopies: number;
+    borrowedCopies: number;
+  };
 }
 
 export interface ApiResponse<T> {

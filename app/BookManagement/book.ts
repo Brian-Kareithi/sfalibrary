@@ -1,3 +1,25 @@
+// Add this interface for Loan data
+interface Loan {
+  id: string;
+  bookId: string;
+  borrowerId: string;
+  borrowDate: string;
+  dueDate: string;
+  returnDate: string | null;
+  status: 'ACTIVE' | 'RETURNED' | 'OVERDUE';
+  renewalCount: number;
+  fineAmount: number;
+  finePaidAmount: number;
+  fineWaivedAmount: number;
+  condition?: 'EXCELLENT' | 'GOOD' | 'FAIR' | 'POOR' | 'DAMAGED';
+  notes?: string;
+  borrower?: {
+    id: string;
+    name: string;
+    email: string;
+  };
+}
+
 export interface Book {
   id: string;
   isbn: string;
@@ -27,6 +49,14 @@ export interface Book {
   barcode?: string;
   createdAt: string;
   updatedAt: string;
+  creator?: {
+    name: string;
+    email?: string;
+  };
+  loans?: Loan[]; // Fixed: Replaced any[] with Loan[]
+  _count?: {
+    loans: number;
+  };
 }
 
 export interface BookFilters {

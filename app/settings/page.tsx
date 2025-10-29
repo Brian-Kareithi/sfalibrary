@@ -45,11 +45,11 @@ interface ApiSettings {
 
 const defaultSettings: LibrarySettings = {
   general: {
-    libraryName: '',
-    libraryEmail: '',
-    libraryPhone: '',
-    libraryAddress: '',
-    openingHours: '9:00 AM - 6:00 PM',
+    libraryName: 'Steadfast School Library',
+    libraryEmail: 'library@steadfastschool.ac.ke',
+    libraryPhone: '+254 700 000000',
+    libraryAddress: 'Steadfast School, Nairobi, Kenya',
+    openingHours: '8:00 AM - 5:00 PM',
     maxBorrowLimit: 5,
     reservationExpiryDays: 3,
   },
@@ -57,8 +57,8 @@ const defaultSettings: LibrarySettings = {
     defaultLoanPeriod: 14,
     maxRenewals: 2,
     renewalExtensionDays: 14,
-    dailyFineAmount: 0.50,
-    maxFineAmount: 50.00,
+    dailyFineAmount: 50,
+    maxFineAmount: 1000,
     gracePeriodDays: 1,
   },
   notifications: {
@@ -76,7 +76,6 @@ const defaultSettings: LibrarySettings = {
   },
 };
 
-// Helper function to safely merge API response with defaults
 const mergeSettings = (apiSettings: ApiSettings | null): LibrarySettings => {
   if (!apiSettings) return defaultSettings;
 
@@ -119,14 +118,12 @@ export default function SettingsPage() {
       
       const response = await libraryApi.getSettings();
       
-      // Debug: log the API response to see actual structure
       console.log('API Response:', response);
       
       if (response.success) {
         const mergedSettings = mergeSettings(response.data as ApiSettings);
         setSettings(mergedSettings);
       } else {
-        // If API fails, use defaults but don't throw error
         console.warn('API returned unsuccessful, using default settings');
         setSettings(defaultSettings);
       }
@@ -183,36 +180,36 @@ export default function SettingsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600 text-lg font-medium">Loading settings...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading settings...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-white">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
+      <header className="bg-white border-b border-gray-200">
+        <div className="max-w-6xl mx-auto px-6">
+          <div className="flex justify-between items-center py-6">
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Library Settings</h1>
               <p className="text-gray-600">Configure your library management system</p>
             </div>
-            <div className="flex space-x-4">
+            <div className="flex space-x-3">
               <button
                 onClick={handleResetToDefaults}
-                className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-md font-medium transition-colors"
               >
                 Reset to Defaults
               </button>
               <button
                 onClick={handleSaveSettings}
                 disabled={!hasChanges || saving}
-                className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white px-4 py-2 rounded-md font-medium transition-colors"
               >
                 {saving ? 'Saving...' : 'Save Changes'}
               </button>
@@ -224,53 +221,48 @@ export default function SettingsPage() {
       {/* Error Banner */}
       {error && (
         <div className="bg-red-50 border-l-4 border-red-400 p-4">
-          <div className="flex">
-            <div className="flex-shrink-0">
-              <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <svg className="h-5 w-5 text-red-400 mr-2" viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
               </svg>
-            </div>
-            <div className="ml-3">
               <p className="text-sm text-red-700">{error}</p>
             </div>
-            <div className="ml-auto pl-3">
-              <button
-                onClick={() => setError(null)}
-                className="text-red-500 hover:text-red-700"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
+            <button
+              onClick={() => setError(null)}
+              className="text-red-500 hover:text-red-700"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
           </div>
         </div>
       )}
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-6xl mx-auto px-6 py-8">
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Sidebar Navigation */}
           <div className="lg:w-64">
-            <nav className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-              <div className="space-y-2">
+            <nav className="bg-white border border-gray-200 rounded-lg p-4">
+              <div className="space-y-1">
                 {[
-                  { id: 'general' as const, label: 'General Settings', icon: '⚙️' },
-                  { id: 'borrowing' as const, label: 'Borrowing Rules', icon: '📚' },
-                  { id: 'notifications' as const, label: 'Notifications', icon: '🔔' },
-                  { id: 'security' as const, label: 'Security', icon: '🔒' },
+                  { id: 'general' as const, label: 'General Settings' },
+                  { id: 'borrowing' as const, label: 'Borrowing Rules' },
+                  { id: 'notifications' as const, label: 'Notifications' },
+                  { id: 'security' as const, label: 'Security' },
                 ].map((section) => (
                   <button
                     key={section.id}
                     onClick={() => setActiveSection(section.id)}
-                    className={`w-full flex items-center space-x-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                    className={`w-full text-left px-4 py-3 text-sm font-medium rounded-md transition-colors ${
                       activeSection === section.id
-                        ? 'bg-blue-100 text-blue-700'
-                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                        ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                     }`}
                   >
-                    <span className="text-lg">{section.icon}</span>
-                    <span>{section.label}</span>
+                    {section.label}
                   </button>
                 ))}
               </div>
@@ -279,109 +271,109 @@ export default function SettingsPage() {
 
           {/* Settings Content */}
           <div className="flex-1">
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-              <div className="p-6">
+            <div className="bg-white border border-gray-200 rounded-lg">
+              <div className="p-8">
                 {/* General Settings */}
                 {activeSection === 'general' && (
-                  <div className="space-y-6">
-                    <h2 className="text-xl font-semibold text-gray-900">General Settings</h2>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Library Name *
-                        </label>
-                        <input
-                          type="text"
-                          value={settings.general.libraryName}
-                          onChange={(e) => handleSettingChange('general', 'libraryName', e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          placeholder="Enter library name"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Library Email *
-                        </label>
-                        <input
-                          type="email"
-                          value={settings.general.libraryEmail}
-                          onChange={(e) => handleSettingChange('general', 'libraryEmail', e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          placeholder="library@example.com"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Phone Number
-                        </label>
-                        <input
-                          type="tel"
-                          value={settings.general.libraryPhone}
-                          onChange={(e) => handleSettingChange('general', 'libraryPhone', e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          placeholder="+1 (555) 123-4567"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Max Borrow Limit *
-                        </label>
-                        <input
-                          type="number"
-                          min="1"
-                          max="20"
-                          value={settings.general.maxBorrowLimit}
-                          onChange={(e) => handleSettingChange('general', 'maxBorrowLimit', parseInt(e.target.value))}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                        <p className="text-xs text-gray-500 mt-1">Maximum number of books a user can borrow at once</p>
-                      </div>
-                    </div>
-
+                  <div className="space-y-8">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Library Address
-                      </label>
-                      <textarea
-                        value={settings.general.libraryAddress}
-                        onChange={(e) => handleSettingChange('general', 'libraryAddress', e.target.value)}
-                        rows={3}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="Enter full library address"
-                      />
+                      <h2 className="text-xl font-semibold text-gray-900 mb-2">General Settings</h2>
+                      <p className="text-gray-600">Basic information and operational settings for the library</p>
                     </div>
+                    
+                    <div className="space-y-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Library Name
+                          </label>
+                          <input
+                            type="text"
+                            value={settings.general.libraryName}
+                            onChange={(e) => handleSettingChange('general', 'libraryName', e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          />
+                        </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Opening Hours
-                        </label>
-                        <input
-                          type="text"
-                          value={settings.general.openingHours}
-                          onChange={(e) => handleSettingChange('general', 'openingHours', e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          placeholder="9:00 AM - 6:00 PM"
-                        />
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Library Email
+                          </label>
+                          <input
+                            type="email"
+                            value={settings.general.libraryEmail}
+                            onChange={(e) => handleSettingChange('general', 'libraryEmail', e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Phone Number
+                          </label>
+                          <input
+                            type="tel"
+                            value={settings.general.libraryPhone}
+                            onChange={(e) => handleSettingChange('general', 'libraryPhone', e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Max Borrow Limit
+                          </label>
+                          <input
+                            type="number"
+                            min="1"
+                            max="20"
+                            value={settings.general.maxBorrowLimit}
+                            onChange={(e) => handleSettingChange('general', 'maxBorrowLimit', parseInt(e.target.value))}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          />
+                          <p className="text-xs text-gray-500 mt-1">Maximum number of books a user can borrow at once</p>
+                        </div>
                       </div>
 
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Reservation Expiry (Days) *
+                          Library Address
                         </label>
-                        <input
-                          type="number"
-                          min="1"
-                          max="30"
-                          value={settings.general.reservationExpiryDays}
-                          onChange={(e) => handleSettingChange('general', 'reservationExpiryDays', parseInt(e.target.value))}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        <textarea
+                          value={settings.general.libraryAddress}
+                          onChange={(e) => handleSettingChange('general', 'libraryAddress', e.target.value)}
+                          rows={3}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         />
-                        <p className="text-xs text-gray-500 mt-1">Days before a reservation expires</p>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Opening Hours
+                          </label>
+                          <input
+                            type="text"
+                            value={settings.general.openingHours}
+                            onChange={(e) => handleSettingChange('general', 'openingHours', e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Reservation Expiry (Days)
+                          </label>
+                          <input
+                            type="number"
+                            min="1"
+                            max="30"
+                            value={settings.general.reservationExpiryDays}
+                            onChange={(e) => handleSettingChange('general', 'reservationExpiryDays', parseInt(e.target.value))}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          />
+                          <p className="text-xs text-gray-500 mt-1">Days before a reservation expires</p>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -389,102 +381,110 @@ export default function SettingsPage() {
 
                 {/* Borrowing Rules */}
                 {activeSection === 'borrowing' && (
-                  <div className="space-y-6">
-                    <h2 className="text-xl font-semibold text-gray-900">Borrowing Rules</h2>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Default Loan Period (Days) *
-                        </label>
-                        <input
-                          type="number"
-                          min="1"
-                          max="365"
-                          value={settings.borrowing.defaultLoanPeriod}
-                          onChange={(e) => handleSettingChange('borrowing', 'defaultLoanPeriod', parseInt(e.target.value))}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                        <p className="text-xs text-gray-500 mt-1">Standard borrowing period in days</p>
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Maximum Renewals *
-                        </label>
-                        <input
-                          type="number"
-                          min="0"
-                          max="10"
-                          value={settings.borrowing.maxRenewals}
-                          onChange={(e) => handleSettingChange('borrowing', 'maxRenewals', parseInt(e.target.value))}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                        <p className="text-xs text-gray-500 mt-1">Maximum number of times a loan can be renewed</p>
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Renewal Extension (Days) *
-                        </label>
-                        <input
-                          type="number"
-                          min="1"
-                          max="365"
-                          value={settings.borrowing.renewalExtensionDays}
-                          onChange={(e) => handleSettingChange('borrowing', 'renewalExtensionDays', parseInt(e.target.value))}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                        <p className="text-xs text-gray-500 mt-1">Days added when a loan is renewed</p>
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Grace Period (Days) *
-                        </label>
-                        <input
-                          type="number"
-                          min="0"
-                          max="7"
-                          value={settings.borrowing.gracePeriodDays}
-                          onChange={(e) => handleSettingChange('borrowing', 'gracePeriodDays', parseInt(e.target.value))}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                        <p className="text-xs text-gray-500 mt-1">Days before fines start accruing</p>
-                      </div>
+                  <div className="space-y-8">
+                    <div>
+                      <h2 className="text-xl font-semibold text-gray-900 mb-2">Borrowing Rules</h2>
+                      <p className="text-gray-600">Configure loan periods, renewals, and fine policies</p>
                     </div>
+                    
+                    <div className="space-y-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Default Loan Period (Days)
+                          </label>
+                          <input
+                            type="number"
+                            min="1"
+                            max="365"
+                            value={settings.borrowing.defaultLoanPeriod}
+                            onChange={(e) => handleSettingChange('borrowing', 'defaultLoanPeriod', parseInt(e.target.value))}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          />
+                          <p className="text-xs text-gray-500 mt-1">Standard borrowing period in days</p>
+                        </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Daily Fine Amount ($) *
-                        </label>
-                        <input
-                          type="number"
-                          min="0"
-                          max="10"
-                          step="0.01"
-                          value={settings.borrowing.dailyFineAmount}
-                          onChange={(e) => handleSettingChange('borrowing', 'dailyFineAmount', parseFloat(e.target.value))}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                        <p className="text-xs text-gray-500 mt-1">Fine amount per day after grace period</p>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Maximum Renewals
+                          </label>
+                          <input
+                            type="number"
+                            min="0"
+                            max="10"
+                            value={settings.borrowing.maxRenewals}
+                            onChange={(e) => handleSettingChange('borrowing', 'maxRenewals', parseInt(e.target.value))}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          />
+                          <p className="text-xs text-gray-500 mt-1">Maximum number of times a loan can be renewed</p>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Renewal Extension (Days)
+                          </label>
+                          <input
+                            type="number"
+                            min="1"
+                            max="365"
+                            value={settings.borrowing.renewalExtensionDays}
+                            onChange={(e) => handleSettingChange('borrowing', 'renewalExtensionDays', parseInt(e.target.value))}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          />
+                          <p className="text-xs text-gray-500 mt-1">Days added when a loan is renewed</p>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Grace Period (Days)
+                          </label>
+                          <input
+                            type="number"
+                            min="0"
+                            max="7"
+                            value={settings.borrowing.gracePeriodDays}
+                            onChange={(e) => handleSettingChange('borrowing', 'gracePeriodDays', parseInt(e.target.value))}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          />
+                          <p className="text-xs text-gray-500 mt-1">Days before fines start accruing</p>
+                        </div>
                       </div>
 
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Maximum Fine Amount ($) *
-                        </label>
-                        <input
-                          type="number"
-                          min="0"
-                          max="100"
-                          step="0.01"
-                          value={settings.borrowing.maxFineAmount}
-                          onChange={(e) => handleSettingChange('borrowing', 'maxFineAmount', parseFloat(e.target.value))}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                        <p className="text-xs text-gray-500 mt-1">Maximum fine amount per book</p>
+                      <div className="border-t pt-6">
+                        <h3 className="text-lg font-medium text-gray-900 mb-4">Fine Settings (Kenyan Shillings)</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              Daily Fine Amount (KSh)
+                            </label>
+                            <input
+                              type="number"
+                              min="0"
+                              max="1000"
+                              step="10"
+                              value={settings.borrowing.dailyFineAmount}
+                              onChange={(e) => handleSettingChange('borrowing', 'dailyFineAmount', parseFloat(e.target.value))}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            />
+                            <p className="text-xs text-gray-500 mt-1">Fine amount per day after grace period</p>
+                          </div>
+
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              Maximum Fine Amount (KSh)
+                            </label>
+                            <input
+                              type="number"
+                              min="0"
+                              max="10000"
+                              step="100"
+                              value={settings.borrowing.maxFineAmount}
+                              onChange={(e) => handleSettingChange('borrowing', 'maxFineAmount', parseFloat(e.target.value))}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            />
+                            <p className="text-xs text-gray-500 mt-1">Maximum fine amount per book</p>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -492,97 +492,102 @@ export default function SettingsPage() {
 
                 {/* Notifications */}
                 {activeSection === 'notifications' && (
-                  <div className="space-y-6">
-                    <h2 className="text-xl font-semibold text-gray-900">Notification Settings</h2>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Due Soon Reminder (Days) *
-                        </label>
-                        <input
-                          type="number"
-                          min="1"
-                          max="14"
-                          value={settings.notifications.dueSoonReminderDays}
-                          onChange={(e) => handleSettingChange('notifications', 'dueSoonReminderDays', parseInt(e.target.value))}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                        <p className="text-xs text-gray-500 mt-1">Days before due date to send reminder</p>
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Overdue Reminder Interval (Days) *
-                        </label>
-                        <input
-                          type="number"
-                          min="1"
-                          max="30"
-                          value={settings.notifications.overdueReminderInterval}
-                          onChange={(e) => handleSettingChange('notifications', 'overdueReminderInterval', parseInt(e.target.value))}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                        <p className="text-xs text-gray-500 mt-1">Days between overdue reminders</p>
-                      </div>
+                  <div className="space-y-8">
+                    <div>
+                      <h2 className="text-xl font-semibold text-gray-900 mb-2">Notification Settings</h2>
+                      <p className="text-gray-600">Configure how and when users are notified</p>
                     </div>
-
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                    
+                    <div className="space-y-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
-                          <label className="text-sm font-medium text-gray-700">Email Notifications</label>
-                          <p className="text-xs text-gray-500">Send notifications via email</p>
-                        </div>
-                        <button
-                          onClick={() => handleSettingChange('notifications', 'sendEmailNotifications', !settings.notifications.sendEmailNotifications)}
-                          className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
-                            settings.notifications.sendEmailNotifications ? 'bg-blue-600' : 'bg-gray-200'
-                          }`}
-                        >
-                          <span
-                            className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                              settings.notifications.sendEmailNotifications ? 'translate-x-5' : 'translate-x-0'
-                            }`}
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Due Soon Reminder (Days)
+                          </label>
+                          <input
+                            type="number"
+                            min="1"
+                            max="14"
+                            value={settings.notifications.dueSoonReminderDays}
+                            onChange={(e) => handleSettingChange('notifications', 'dueSoonReminderDays', parseInt(e.target.value))}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                           />
-                        </button>
+                          <p className="text-xs text-gray-500 mt-1">Days before due date to send reminder</p>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Overdue Reminder Interval (Days)
+                          </label>
+                          <input
+                            type="number"
+                            min="1"
+                            max="30"
+                            value={settings.notifications.overdueReminderInterval}
+                            onChange={(e) => handleSettingChange('notifications', 'overdueReminderInterval', parseInt(e.target.value))}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          />
+                          <p className="text-xs text-gray-500 mt-1">Days between overdue reminders</p>
+                        </div>
                       </div>
 
-                      <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                        <div>
-                          <label className="text-sm font-medium text-gray-700">SMS Notifications</label>
-                          <p className="text-xs text-gray-500">Send notifications via SMS</p>
-                        </div>
-                        <button
-                          onClick={() => handleSettingChange('notifications', 'sendSMSNotifications', !settings.notifications.sendSMSNotifications)}
-                          className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
-                            settings.notifications.sendSMSNotifications ? 'bg-blue-600' : 'bg-gray-200'
-                          }`}
-                        >
-                          <span
-                            className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                              settings.notifications.sendSMSNotifications ? 'translate-x-5' : 'translate-x-0'
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between p-4 bg-gray-50 rounded-md border border-gray-200">
+                          <div>
+                            <label className="text-sm font-medium text-gray-700">Email Notifications</label>
+                            <p className="text-xs text-gray-500 mt-1">Send notifications via email</p>
+                          </div>
+                          <button
+                            onClick={() => handleSettingChange('notifications', 'sendEmailNotifications', !settings.notifications.sendEmailNotifications)}
+                            className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                              settings.notifications.sendEmailNotifications ? 'bg-blue-600' : 'bg-gray-300'
                             }`}
-                          />
-                        </button>
-                      </div>
+                          >
+                            <span
+                              className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                                settings.notifications.sendEmailNotifications ? 'translate-x-5' : 'translate-x-0'
+                              }`}
+                            />
+                          </button>
+                        </div>
 
-                      <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                        <div>
-                          <label className="text-sm font-medium text-gray-700">Auto-send Reports</label>
-                          <p className="text-xs text-gray-500">Automatically send weekly reports</p>
-                        </div>
-                        <button
-                          onClick={() => handleSettingChange('notifications', 'autoSendReports', !settings.notifications.autoSendReports)}
-                          className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
-                            settings.notifications.autoSendReports ? 'bg-blue-600' : 'bg-gray-200'
-                          }`}
-                        >
-                          <span
-                            className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                              settings.notifications.autoSendReports ? 'translate-x-5' : 'translate-x-0'
+                        <div className="flex items-center justify-between p-4 bg-gray-50 rounded-md border border-gray-200">
+                          <div>
+                            <label className="text-sm font-medium text-gray-700">SMS Notifications</label>
+                            <p className="text-xs text-gray-500 mt-1">Send notifications via SMS</p>
+                          </div>
+                          <button
+                            onClick={() => handleSettingChange('notifications', 'sendSMSNotifications', !settings.notifications.sendSMSNotifications)}
+                            className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                              settings.notifications.sendSMSNotifications ? 'bg-blue-600' : 'bg-gray-300'
                             }`}
-                          />
-                        </button>
+                          >
+                            <span
+                              className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                                settings.notifications.sendSMSNotifications ? 'translate-x-5' : 'translate-x-0'
+                              }`}
+                            />
+                          </button>
+                        </div>
+
+                        <div className="flex items-center justify-between p-4 bg-gray-50 rounded-md border border-gray-200">
+                          <div>
+                            <label className="text-sm font-medium text-gray-700">Auto-send Reports</label>
+                            <p className="text-xs text-gray-500 mt-1">Automatically send weekly reports</p>
+                          </div>
+                          <button
+                            onClick={() => handleSettingChange('notifications', 'autoSendReports', !settings.notifications.autoSendReports)}
+                            className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                              settings.notifications.autoSendReports ? 'bg-blue-600' : 'bg-gray-300'
+                            }`}
+                          >
+                            <span
+                              className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                                settings.notifications.autoSendReports ? 'translate-x-5' : 'translate-x-0'
+                              }`}
+                            />
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -590,73 +595,78 @@ export default function SettingsPage() {
 
                 {/* Security */}
                 {activeSection === 'security' && (
-                  <div className="space-y-6">
-                    <h2 className="text-xl font-semibold text-gray-900">Security Settings</h2>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Session Timeout (Minutes) *
-                        </label>
-                        <input
-                          type="number"
-                          min="5"
-                          max="480"
-                          value={settings.security.sessionTimeout}
-                          onChange={(e) => handleSettingChange('security', 'sessionTimeout', parseInt(e.target.value))}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                        <p className="text-xs text-gray-500 mt-1">Minutes before automatic logout</p>
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Password Expiry (Days) *
-                        </label>
-                        <input
-                          type="number"
-                          min="1"
-                          max="365"
-                          value={settings.security.passwordExpiryDays}
-                          onChange={(e) => handleSettingChange('security', 'passwordExpiryDays', parseInt(e.target.value))}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                        <p className="text-xs text-gray-500 mt-1">Days before password expires</p>
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Maximum Login Attempts *
-                        </label>
-                        <input
-                          type="number"
-                          min="1"
-                          max="10"
-                          value={settings.security.maxLoginAttempts}
-                          onChange={(e) => handleSettingChange('security', 'maxLoginAttempts', parseInt(e.target.value))}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                        <p className="text-xs text-gray-500 mt-1">Failed attempts before account lock</p>
-                      </div>
+                  <div className="space-y-8">
+                    <div>
+                      <h2 className="text-xl font-semibold text-gray-900 mb-2">Security Settings</h2>
+                      <p className="text-gray-600">Configure system security and access controls</p>
                     </div>
+                    
+                    <div className="space-y-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Session Timeout (Minutes)
+                          </label>
+                          <input
+                            type="number"
+                            min="5"
+                            max="480"
+                            value={settings.security.sessionTimeout}
+                            onChange={(e) => handleSettingChange('security', 'sessionTimeout', parseInt(e.target.value))}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          />
+                          <p className="text-xs text-gray-500 mt-1">Minutes before automatic logout</p>
+                        </div>
 
-                    <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                      <div>
-                        <label className="text-sm font-medium text-gray-700">Require Reauthentication</label>
-                        <p className="text-xs text-gray-500">Require password for sensitive actions</p>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Password Expiry (Days)
+                          </label>
+                          <input
+                            type="number"
+                            min="1"
+                            max="365"
+                            value={settings.security.passwordExpiryDays}
+                            onChange={(e) => handleSettingChange('security', 'passwordExpiryDays', parseInt(e.target.value))}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          />
+                          <p className="text-xs text-gray-500 mt-1">Days before password expires</p>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Maximum Login Attempts
+                          </label>
+                          <input
+                            type="number"
+                            min="1"
+                            max="10"
+                            value={settings.security.maxLoginAttempts}
+                            onChange={(e) => handleSettingChange('security', 'maxLoginAttempts', parseInt(e.target.value))}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          />
+                          <p className="text-xs text-gray-500 mt-1">Failed attempts before account lock</p>
+                        </div>
                       </div>
-                      <button
-                        onClick={() => handleSettingChange('security', 'requireReauthentication', !settings.security.requireReauthentication)}
-                        className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
-                          settings.security.requireReauthentication ? 'bg-blue-600' : 'bg-gray-200'
-                        }`}
-                      >
-                        <span
-                          className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                            settings.security.requireReauthentication ? 'translate-x-5' : 'translate-x-0'
+
+                      <div className="flex items-center justify-between p-4 bg-gray-50 rounded-md border border-gray-200">
+                        <div>
+                          <label className="text-sm font-medium text-gray-700">Require Reauthentication</label>
+                          <p className="text-xs text-gray-500 mt-1">Require password for sensitive actions</p>
+                        </div>
+                        <button
+                          onClick={() => handleSettingChange('security', 'requireReauthentication', !settings.security.requireReauthentication)}
+                          className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                            settings.security.requireReauthentication ? 'bg-blue-600' : 'bg-gray-300'
                           }`}
-                        />
-                      </button>
+                        >
+                          <span
+                            className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                              settings.security.requireReauthentication ? 'translate-x-5' : 'translate-x-0'
+                            }`}
+                          />
+                        </button>
+                      </div>
                     </div>
                   </div>
                 )}
@@ -664,7 +674,7 @@ export default function SettingsPage() {
 
               {/* Save Bar */}
               {hasChanges && (
-                <div className="border-t border-gray-200 bg-gray-50 px-6 py-4">
+                <div className="border-t border-gray-200 bg-gray-50 px-8 py-4">
                   <div className="flex items-center justify-between">
                     <div className="text-sm text-gray-600">
                       You have unsaved changes
@@ -675,14 +685,14 @@ export default function SettingsPage() {
                           setHasChanges(false);
                           loadSettings();
                         }}
-                        className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                        className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
                       >
                         Discard Changes
                       </button>
                       <button
                         onClick={handleSaveSettings}
                         disabled={saving}
-                        className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors disabled:bg-gray-400"
+                        className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors disabled:bg-gray-400"
                       >
                         {saving ? 'Saving...' : 'Save Changes'}
                       </button>
