@@ -36,6 +36,11 @@ interface LibrarySettings {
   };
 }
 
+// Define a partial type for API settings that might be incomplete
+type PartialLibrarySettings = {
+  [K in keyof LibrarySettings]?: Partial<LibrarySettings[K]>;
+};
+
 const defaultSettings: LibrarySettings = {
   general: {
     libraryName: 'Steadfast School Library',
@@ -70,7 +75,7 @@ const defaultSettings: LibrarySettings = {
 };
 
 // Helper function to safely merge settings with defaults
-const mergeSettingsWithDefaults = (apiSettings: any): LibrarySettings => {
+const mergeSettingsWithDefaults = (apiSettings: PartialLibrarySettings | null): LibrarySettings => {
   if (!apiSettings) return defaultSettings;
 
   return {
@@ -149,7 +154,7 @@ export default function SettingsPage() {
   const handleSettingChange = (
     section: keyof LibrarySettings,
     field: string,
-    value: any
+    value: string | number | boolean
   ) => {
     setSettings(prev => ({
       ...prev,
@@ -169,9 +174,12 @@ export default function SettingsPage() {
   };
 
   // Safe value getter with fallback
-  const getSafeValue = (section: keyof LibrarySettings, field: string) => {
-    if (!settings[section]) return '';
-    return (settings[section] as any)[field] ?? '';
+  const getSafeValue = (section: keyof LibrarySettings, field: string): string | number | boolean => {
+    const sectionData = settings[section];
+    if (sectionData && field in sectionData) {
+      return sectionData[field as keyof typeof sectionData];
+    }
+    return '';
   };
 
   if (loading) {
@@ -251,7 +259,7 @@ export default function SettingsPage() {
                     </label>
                     <input
                       type="text"
-                      value={getSafeValue('general', 'libraryName')}
+                      value={getSafeValue('general', 'libraryName') as string}
                       onChange={(e) => handleSettingChange('general', 'libraryName', e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
                     />
@@ -263,7 +271,7 @@ export default function SettingsPage() {
                     </label>
                     <input
                       type="email"
-                      value={getSafeValue('general', 'libraryEmail')}
+                      value={getSafeValue('general', 'libraryEmail') as string}
                       onChange={(e) => handleSettingChange('general', 'libraryEmail', e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
                     />
@@ -275,7 +283,7 @@ export default function SettingsPage() {
                     </label>
                     <input
                       type="tel"
-                      value={getSafeValue('general', 'libraryPhone')}
+                      value={getSafeValue('general', 'libraryPhone') as string}
                       onChange={(e) => handleSettingChange('general', 'libraryPhone', e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
                     />
@@ -289,7 +297,7 @@ export default function SettingsPage() {
                       type="number"
                       min="1"
                       max="20"
-                      value={getSafeValue('general', 'maxBorrowLimit')}
+                      value={getSafeValue('general', 'maxBorrowLimit') as number}
                       onChange={(e) => handleSettingChange('general', 'maxBorrowLimit', parseInt(e.target.value) || 0)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
                     />
@@ -300,7 +308,7 @@ export default function SettingsPage() {
                       Library Address
                     </label>
                     <textarea
-                      value={getSafeValue('general', 'libraryAddress')}
+                      value={getSafeValue('general', 'libraryAddress') as string}
                       onChange={(e) => handleSettingChange('general', 'libraryAddress', e.target.value)}
                       rows={2}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
@@ -313,7 +321,7 @@ export default function SettingsPage() {
                     </label>
                     <input
                       type="text"
-                      value={getSafeValue('general', 'openingHours')}
+                      value={getSafeValue('general', 'openingHours') as string}
                       onChange={(e) => handleSettingChange('general', 'openingHours', e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
                     />
@@ -327,7 +335,7 @@ export default function SettingsPage() {
                       type="number"
                       min="1"
                       max="30"
-                      value={getSafeValue('general', 'reservationExpiryDays')}
+                      value={getSafeValue('general', 'reservationExpiryDays') as number}
                       onChange={(e) => handleSettingChange('general', 'reservationExpiryDays', parseInt(e.target.value) || 0)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
                     />
@@ -347,7 +355,7 @@ export default function SettingsPage() {
                       type="number"
                       min="1"
                       max="365"
-                      value={getSafeValue('borrowing', 'defaultLoanPeriod')}
+                      value={getSafeValue('borrowing', 'defaultLoanPeriod') as number}
                       onChange={(e) => handleSettingChange('borrowing', 'defaultLoanPeriod', parseInt(e.target.value) || 0)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
                     />
@@ -361,7 +369,7 @@ export default function SettingsPage() {
                       type="number"
                       min="0"
                       max="10"
-                      value={getSafeValue('borrowing', 'maxRenewals')}
+                      value={getSafeValue('borrowing', 'maxRenewals') as number}
                       onChange={(e) => handleSettingChange('borrowing', 'maxRenewals', parseInt(e.target.value) || 0)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
                     />
@@ -375,7 +383,7 @@ export default function SettingsPage() {
                       type="number"
                       min="1"
                       max="365"
-                      value={getSafeValue('borrowing', 'renewalExtensionDays')}
+                      value={getSafeValue('borrowing', 'renewalExtensionDays') as number}
                       onChange={(e) => handleSettingChange('borrowing', 'renewalExtensionDays', parseInt(e.target.value) || 0)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
                     />
@@ -389,7 +397,7 @@ export default function SettingsPage() {
                       type="number"
                       min="0"
                       max="7"
-                      value={getSafeValue('borrowing', 'gracePeriodDays')}
+                      value={getSafeValue('borrowing', 'gracePeriodDays') as number}
                       onChange={(e) => handleSettingChange('borrowing', 'gracePeriodDays', parseInt(e.target.value) || 0)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
                     />
@@ -404,7 +412,7 @@ export default function SettingsPage() {
                       min="0"
                       max="1000"
                       step="10"
-                      value={getSafeValue('borrowing', 'dailyFineAmount')}
+                      value={getSafeValue('borrowing', 'dailyFineAmount') as number}
                       onChange={(e) => handleSettingChange('borrowing', 'dailyFineAmount', parseFloat(e.target.value) || 0)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
                     />
@@ -419,7 +427,7 @@ export default function SettingsPage() {
                       min="0"
                       max="10000"
                       step="10"
-                      value={getSafeValue('borrowing', 'maxFineAmount')}
+                      value={getSafeValue('borrowing', 'maxFineAmount') as number}
                       onChange={(e) => handleSettingChange('borrowing', 'maxFineAmount', parseFloat(e.target.value) || 0)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
                     />
@@ -439,7 +447,7 @@ export default function SettingsPage() {
                       type="number"
                       min="1"
                       max="14"
-                      value={getSafeValue('notifications', 'dueSoonReminderDays')}
+                      value={getSafeValue('notifications', 'dueSoonReminderDays') as number}
                       onChange={(e) => handleSettingChange('notifications', 'dueSoonReminderDays', parseInt(e.target.value) || 0)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
                     />
@@ -453,7 +461,7 @@ export default function SettingsPage() {
                       type="number"
                       min="1"
                       max="30"
-                      value={getSafeValue('notifications', 'overdueReminderInterval')}
+                      value={getSafeValue('notifications', 'overdueReminderInterval') as number}
                       onChange={(e) => handleSettingChange('notifications', 'overdueReminderInterval', parseInt(e.target.value) || 0)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
                     />
@@ -464,7 +472,7 @@ export default function SettingsPage() {
                       <div className="flex items-center justify-between">
                         <label className="text-sm font-medium text-gray-700">Email Notifications</label>
                         <button
-                          onClick={() => handleSettingChange('notifications', 'sendEmailNotifications', !getSafeValue('notifications', 'sendEmailNotifications'))}
+                          onClick={() => handleSettingChange('notifications', 'sendEmailNotifications', !(getSafeValue('notifications', 'sendEmailNotifications') as boolean))}
                           className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                             getSafeValue('notifications', 'sendEmailNotifications') ? 'bg-blue-600' : 'bg-gray-300'
                           }`}
@@ -480,7 +488,7 @@ export default function SettingsPage() {
                       <div className="flex items-center justify-between">
                         <label className="text-sm font-medium text-gray-700">SMS Notifications</label>
                         <button
-                          onClick={() => handleSettingChange('notifications', 'sendSMSNotifications', !getSafeValue('notifications', 'sendSMSNotifications'))}
+                          onClick={() => handleSettingChange('notifications', 'sendSMSNotifications', !(getSafeValue('notifications', 'sendSMSNotifications') as boolean))}
                           className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                             getSafeValue('notifications', 'sendSMSNotifications') ? 'bg-blue-600' : 'bg-gray-300'
                           }`}
@@ -496,7 +504,7 @@ export default function SettingsPage() {
                       <div className="flex items-center justify-between">
                         <label className="text-sm font-medium text-gray-700">Auto-send Reports</label>
                         <button
-                          onClick={() => handleSettingChange('notifications', 'autoSendReports', !getSafeValue('notifications', 'autoSendReports'))}
+                          onClick={() => handleSettingChange('notifications', 'autoSendReports', !(getSafeValue('notifications', 'autoSendReports') as boolean))}
                           className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                             getSafeValue('notifications', 'autoSendReports') ? 'bg-blue-600' : 'bg-gray-300'
                           }`}
@@ -525,7 +533,7 @@ export default function SettingsPage() {
                       type="number"
                       min="5"
                       max="480"
-                      value={getSafeValue('security', 'sessionTimeout')}
+                      value={getSafeValue('security', 'sessionTimeout') as number}
                       onChange={(e) => handleSettingChange('security', 'sessionTimeout', parseInt(e.target.value) || 0)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
                     />
@@ -539,7 +547,7 @@ export default function SettingsPage() {
                       type="number"
                       min="1"
                       max="365"
-                      value={getSafeValue('security', 'passwordExpiryDays')}
+                      value={getSafeValue('security', 'passwordExpiryDays') as number}
                       onChange={(e) => handleSettingChange('security', 'passwordExpiryDays', parseInt(e.target.value) || 0)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
                     />
@@ -553,7 +561,7 @@ export default function SettingsPage() {
                       type="number"
                       min="1"
                       max="10"
-                      value={getSafeValue('security', 'maxLoginAttempts')}
+                      value={getSafeValue('security', 'maxLoginAttempts') as number}
                       onChange={(e) => handleSettingChange('security', 'maxLoginAttempts', parseInt(e.target.value) || 0)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
                     />
@@ -562,7 +570,7 @@ export default function SettingsPage() {
                   <div className="flex items-center justify-between md:col-span-2">
                     <label className="text-sm font-medium text-gray-700">Require Reauthentication</label>
                     <button
-                      onClick={() => handleSettingChange('security', 'requireReauthentication', !getSafeValue('security', 'requireReauthentication'))}
+                      onClick={() => handleSettingChange('security', 'requireReauthentication', !(getSafeValue('security', 'requireReauthentication') as boolean))}
                       className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                         getSafeValue('security', 'requireReauthentication') ? 'bg-blue-600' : 'bg-gray-300'
                       }`}
