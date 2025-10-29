@@ -332,7 +332,7 @@ export default function Dashboard() {
                 <div>
                   <div className="flex justify-between items-center mb-4">
                     <h3 className="text-lg font-semibold text-gray-900">Recent Additions</h3>
-                    <Link href="/books" className="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                    <Link href="/BookManagement" className="text-blue-600 hover:text-blue-800 text-sm font-medium">
                       View All Books →
                     </Link>
                   </div>
